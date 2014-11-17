@@ -1,0 +1,31 @@
+{
+  "description": "Two-level caching brought to you by RAM, Redis, and your friends at Mediocre Labratories",
+  "dependencies": {
+    "async": "0.9.x",
+    "lock": "0.1.x",
+    "memory-cache": "0.0.x",
+    "redis": "0.12.x"
+  },
+  "devDependencies": {
+    "mocha": "*"
+  },
+  "homepage": "https://github.com/mediocre/petty-cache",
+  "keywords": [
+    "cache",
+    "redis"
+  ],
+  "license": "Apache-2.0",
+  "main": "index.js",
+  "name": "petty-cache",
+  "scripts": {
+    "test": "mocha --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mediocre/petty-cache.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mediocre/petty-cache/issues"
+  },
+  "version": "1.0.0"
+}

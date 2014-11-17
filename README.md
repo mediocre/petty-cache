@@ -1,0 +1,128 @@
+petty-cache
+===========
+
+Temporarily save your objects for a rainy day with some help from memory-cache and Redis.
+
+```
+var Cache = require('petty-cache');
+
+var cache = new Cache(6379, 'redis.cache.computer', {});
+```
+
+##Features
+
+###Jitter
+
+By default, cache values expire at a random time between 30 and 60 seconds, preventing lots of simultaneous cache misses from overloading Redis.
+
+###Two-level cache
+
+Data is cached for 2 to 4 seconds in memory, preventing large numbers of consecutive hits from overloading Redis.
+
+##API
+
+###new Cache([port, [host, [options]]])
+
+Creates a new petty-cache interface. `port`, `host`, and `options` are passed directly to [redis.createClient()](https://www.npmjs.org/package/redis#redis-createclient-).
+
+###Cache#fetch(key, missFunction, [options,] callback)
+
+Attempts to retrieve the value at the specified key. If it doesn't exist, it passes a callback to missFunction that takes two parameters: an error and a value.  `missFunction` should retrieve the expected value for the key from another source and pass it to the given callback. Either way, the resulting error or value is passed to `callback`.
+
+**Example**
+
+```javascript
+var cache = new Cache();
+
+cache.fetch('a-thing', function(callback) {
+    fs.readFile('file.txt', callback);
+}, function(err, value) {
+    console.log(value); //contents of file.txt as retrieved or cached
+});
+```
+
+**Options**
+
+```javascript
+{
+    expire: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+}
+```
+
+###Cache#set(key, value, [options,] callback)
+
+Unconditionally sets a value for a given key.
+
+**Example**
+
+```javascript
+cache.set('a-thing', {a: 'b'}, function(err) {
+    if (err) {
+        // Handle redis error
+    }
+});
+```
+
+**Options**
+
+```javascript
+{
+    expire: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+}
+```
+
+###Cache#bulkFetch(keys, missFunction, [options,] callback)
+
+Attempts to retrieve the values of the keys specified in the `keys` array. Any keys that aren't found are passed to missFunction as an array along with a callback that takes an error and an object, expecting the keys of the object to be the keys passed to `missFunction` and the values to be the values that should be stored in cache for the corresponding key.  Either way, the resulting error or key-value hash of all requested keys is passed to `callback`.
+
+**Example**
+
+```javascript
+//Let's assume a and b are already cached as 1 and 2
+cache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
+    var results = {};
+    keys.forEach(function(key) {
+        results[key] = key.toUpperCase();
+    }
+}, function(err, values) {
+    console.log(values); //{a: 1, b: 2, c: 'C', d: 'D'}
+});
+```
+
+**Options**
+
+```javascript
+{
+    expire: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+}
+```
+
+###Cache#lock(key, [options,] callback)
+
+A simple distributed lock.  The callback is only called if another entity has not acquired a lock on `key`.  Subsequent attempts to acquire the lock are not made; if you need to retry, you must implement that yourself.
+
+**Example**
+
+```javascript
+cache.lock('resource', function() {
+    console.log('did a thing'); //If multiple processes run simultaneously, only one should print 'did a thing'
+});
+```
+
+**Options**
+
+```javascript
+{
+    expire: 2000 // How long it should take for the lock acquisition to expire in milliseconds. Defaults to 1000.
+}
+```
+
+##License
+
+Copyright 2014 A Mediocre Corporation
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions and limitations under the License.
