@@ -3,8 +3,8 @@ var lock = require('lock')();
 var memoryCache = require('memory-cache');
 var redis = require('redis');
 
-function Cache(port, host, options) {
-    this.client = redis.createClient(port || 6379, host || '127.0.0.1', options);
+function PettyCache(port, host, options) {
+    this.redisClient = redis.createClient(port || 6379, host || '127.0.0.1', options);
 }
 
 function random(min, max) {
@@ -14,7 +14,7 @@ function random(min, max) {
 /**
  * @param {Array} keys - An array of keys.
  */
-Cache.prototype.bulkFetch = function(keys, func, options, callback) {
+PettyCache.prototype.bulkFetch = function(keys, func, options, callback) {
     // Options are optional
     if (!callback) {
         callback = options;
@@ -45,7 +45,7 @@ Cache.prototype.bulkFetch = function(keys, func, options, callback) {
     var self = this;
 
     // Try to get values from remote cache
-    this.client.mget(keys, function(err, data) {
+    this.redisClient.mget(keys, function(err, data) {
         if (err) {
             return callback(err);
         }
@@ -85,7 +85,7 @@ Cache.prototype.bulkFetch = function(keys, func, options, callback) {
 
 // Returns data from cache if available;
 // otherwise executes the specified function and places the results in cache before returning the data.
-Cache.prototype.fetch = function(key, func, options, callback) {
+PettyCache.prototype.fetch = function(key, func, options, callback) {
     // Options are optional
     if (!callback) {
         callback = options;
@@ -101,7 +101,7 @@ Cache.prototype.fetch = function(key, func, options, callback) {
 
     var _this = this;
 
-    this.client.get(key, function(err, data) {
+    this.redisClient.get(key, function(err, data) {
         if (err) {
             return callback(err);
         }
@@ -123,7 +123,7 @@ Cache.prototype.fetch = function(key, func, options, callback) {
                 return callback(null, JSON.parse(value));
             }
 
-            _this.client.get(key, function(err, data) {
+            _this.redisClient.get(key, function(err, data) {
                 if (err) {
                     release()();
                     return callback(err);
@@ -150,31 +150,7 @@ Cache.prototype.fetch = function(key, func, options, callback) {
     });
 };
 
-/*Cache.prototype.get = function(key, callback) {
-    // Try to get value from local memory cache
-    var value = memoryCache.get(key);
-
-    // Return value from local memory cache if it's not null (or the key exists)
-    if (value) {
-        return callback(null, JSON.parse(value));
-    }
-
-    this.client.get(key, function(err, data) {
-        if (err) {
-            return callback(err);
-        }
-
-        if (data) {
-            var result = JSON.parse(data);
-            memoryCache.put(key, data, random(2000, 5000));
-            return callback(null, result);
-        }
-
-        callback();
-    });
-};*/
-
-Cache.prototype.lock = function(key, options, callback) {
+PettyCache.prototype.lock = function(key, options, callback) {
     // Options are optional
     if (!callback && typeof options === 'function') {
         callback = options;
@@ -182,14 +158,14 @@ Cache.prototype.lock = function(key, options, callback) {
 
     var expire = (options && options.expire) ? options.expire : 1000;
 
-    this.client.set(key, '1', 'NX', 'PX', expire, function(err, res) {
+    this.redisClient.set(key, '1', 'NX', 'PX', expire, function(err, res) {
         if (!err && res === 'OK' && callback) {
             callback();
         }
     });
 };
 
-Cache.prototype.set = function(key, value, options, callback) {
+PettyCache.prototype.set = function(key, value, options, callback) {
     // Options are optional
     if (!callback) {
         callback = options;
@@ -205,7 +181,7 @@ Cache.prototype.set = function(key, value, options, callback) {
 
     // Default expire is 30 to 60 seconds
     var expire = (options && options.expire) ? options.expire : random(30000, 60000);
-    this.client.psetex(key, expire, JSON.stringify(value), callback);
+    this.redisClient.psetex(key, expire, JSON.stringify(value), callback);
 };
 
-module.exports = Cache;
+module.exports = PettyCache;
