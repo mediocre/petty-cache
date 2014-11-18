@@ -38,9 +38,9 @@ cache.fetch('key', function(callback) {
 
 Creates a new petty-cache client. `port`, `host`, and `options` are passed directly to [redis.createClient()](https://www.npmjs.org/package/redis#redis-createclient-).
 
-###Cache#bulkFetch(keys, missFunction, [options,] callback)
+###Cache#bulkFetch(keys, cacheMissFunction, [options,] callback)
 
-Attempts to retrieve the values of the keys specified in the `keys` array. Any keys that aren't found are passed to missFunction as an array along with a callback that takes an error and an object, expecting the keys of the object to be the keys passed to `missFunction` and the values to be the values that should be stored in cache for the corresponding key.  Either way, the resulting error or key-value hash of all requested keys is passed to `callback`.
+Attempts to retrieve the values of the keys specified in the `keys` array. Any keys that aren't found are passed to cacheMissFunction as an array along with a callback that takes an error and an object, expecting the keys of the object to be the keys passed to `cacheMissFunction` and the values to be the values that should be stored in cache for the corresponding key.  Either way, the resulting error or key-value hash of all requested keys is passed to `callback`.
 
 **Example**
 
@@ -91,7 +91,7 @@ cache.fetch('key', function(callback) {
 
 ###Cache#lock(key, [options,] callback)
 
-A simple distributed lock.  The callback is only called if another entity has not acquired a lock on `key`.  Subsequent attempts to acquire the lock are not made; if you need to retry, you must implement that yourself.
+A simple distributed lock. The callback is only called if another entity has not acquired a lock on `key`.  Subsequent attempts to acquire the lock are not made; if you need to retry, you must implement that yourself.
 
 **Example**
 
@@ -116,7 +116,7 @@ Unconditionally sets a value for a given key.
 **Example**
 
 ```javascript
-cache.set('a-thing', {a: 'b'}, function(err) {
+cache.set('key', { a: 'b' }, function(err) {
     if (err) {
         // Handle redis error
     }
