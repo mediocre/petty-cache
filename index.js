@@ -150,6 +150,30 @@ PettyCache.prototype.fetch = function(key, func, options, callback) {
     });
 };
 
+PettyCache.prototype.get = function(key, options, callback) {
+    // Options are optional
+    if (!callback) {
+        callback = options;
+    }
+
+    // Try to get value from local memory cache
+    var value = memoryCache.get(key);
+
+    // Return value from local memory cache if it's not null (or the key exists)
+    if (value) {
+        return callback(null, JSON.parse(value));
+    }
+
+    this.redisClient.get(key, function(err, data) {
+        if (err || data === null) {
+            return callback(err, data);
+        }
+
+        memoryCache.put(key, data, random(2000, 5000));
+        callback(null, JSON.parse(data));
+    });
+};
+
 PettyCache.prototype.lock = function(key, options, callback) {
     // Options are optional
     if (!callback && typeof options === 'function') {

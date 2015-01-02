@@ -89,6 +89,19 @@ cache.fetch('key', function(callback) {
 }
 ```
 
+###Cache#get(key, callback)
+
+Gets the value of key trying the in-memory cache first and Redis second. If the key does not exist `null` is returned.
+
+**Example**
+
+```javascript
+cache.get('key', function(err, value) {
+    // `value` contains the value of the key if it was found in the in-memory cache or Redis. `value` is `null` if the key was not found.
+    console.log(value);
+});
+```
+
 ###Cache#lock(key, [options,] callback)
 
 A simple distributed lock. The callback is only called if another entity has not acquired a lock on `key`.  Subsequent attempts to acquire the lock are not made; if you need to retry, you must implement that yourself.
