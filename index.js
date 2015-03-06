@@ -150,6 +150,26 @@ PettyCache.prototype.fetch = function(key, func, options, callback) {
     });
 };
 
+PettyCache.prototype.get = function(key, callback) {
+    // Try to get value from local memory cache
+    var value = memoryCache.get(key);
+
+    // Return value from local memory cache if it's not null (or the key exists)
+    if (value) {
+        return callback(null, JSON.parse(value));
+    }
+
+    this.redisClient.get(key, function(err, data) {
+        if (err || !data) {
+            return callback(err, data);
+        }
+
+        var result = JSON.parse(data);
+        memoryCache.put(key, data, random(2000, 5000));
+        callback(null, result);
+    });
+};
+
 PettyCache.prototype.lock = function(key, options, callback) {
     // Options are optional
     if (!callback && typeof options === 'function') {
@@ -166,33 +186,28 @@ PettyCache.prototype.lock = function(key, options, callback) {
 };
 
 PettyCache.prototype.patch = function(key, value, options, callback) {
-    if (!callback) {
-        callback = options;
-    }
-
     var _this = this;
 
-    var currentValue = memoryCache.get(key);
-
-    var merge = function() {
-        for (var key in value) {
-            currentValue[key] = value[key];
-        }
-        _this.set(key, currentValue, callback);
-    };
-
-    if (currentValue) {
-        merge();
-    } else {
-        this.redisClient.get(key, function(err, data) {
-            if (data) {
-                currentValue = JSON.parse(data);
-                merge();
-            } else {
-                callback(new Error('Key does not exist'));
-            }
-        });
+    if (!callback) {
+        callback = options;
+        options = {};
     }
+
+    this.get(key, function(err, data) {
+        if (err) {
+            return callback(err);
+        }
+
+        if (!data) {
+            return callback(new Error('Key ' + key + ' does not exist'));
+        }
+
+        for (var k in value) {
+            data[k] = value[key];
+        }
+
+        _this.set(key, data, options, callback);
+    });
 };
 
 PettyCache.prototype.set = function(key, value, options, callback) {

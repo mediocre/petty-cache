@@ -123,7 +123,7 @@ describe('PettyCache.fetch', function() {
             setTimeout(function() {
                 callback(null, ++numberOfFuncCalls);
             }, 100);
-        }
+        };
 
         pettyCache.fetch(key, func, function() {});
         pettyCache.fetch(key, func, function() {});
@@ -151,7 +151,7 @@ describe('PettyCache.fetch', function() {
             setTimeout(function() {
                 callback(null, ++numberOfFuncCalls);
             }, 100);
-        }
+        };
 
         pettyCache.fetch(key, func, { expire: 6000 }, function() {});
         
@@ -168,6 +168,37 @@ describe('PettyCache.fetch', function() {
                     });
                 });
             }, 6000);
+        });
+    });
+});
+
+describe('PettyCache.get', function() {
+    it('PettyCache.get', function(done) {
+        this.timeout(14000);
+
+        var key = Math.random().toString();
+
+        pettyCache.get(key, function(err, data) {
+            assert.equal(data, null);
+
+            pettyCache.set(key, 'Hello World', { expire: 6000 }, function() {
+                pettyCache.get(key, function(err, data) {
+                    assert.equal(data, 'Hello World');
+
+                    setTimeout(function() {
+                        pettyCache.get(key, function(err, data) {
+                            assert.equal(data, 'Hello World');
+
+                            setTimeout(function() {
+                                pettyCache.get(key, function(err, data) {
+                                    assert.equal(data, null);
+                                    done();
+                                });
+                            }, 6001);
+                        });
+                    }, 5001);
+                });
+            });
         });
     });
 });
