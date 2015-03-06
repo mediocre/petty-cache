@@ -150,12 +150,7 @@ PettyCache.prototype.fetch = function(key, func, options, callback) {
     });
 };
 
-PettyCache.prototype.get = function(key, options, callback) {
-    // Options are optional
-    if (!callback) {
-        callback = options;
-    }
-
+PettyCache.prototype.get = function(key, callback) {
     // Try to get value from local memory cache
     var value = memoryCache.get(key);
 
@@ -189,10 +184,36 @@ PettyCache.prototype.lock = function(key, options, callback) {
     });
 };
 
+PettyCache.prototype.patch = function(key, value, options, callback) {
+    var _this = this;
+
+    if (!callback) {
+        callback = options;
+        options = {};
+    }
+
+    this.get(key, function(err, data) {
+        if (err) {
+            return callback(err);
+        }
+
+        if (!data) {
+            return callback(new Error('Key ' + key + ' does not exist'));
+        }
+
+        for (var k in value) {
+            data[k] = value[k];
+        }
+
+        _this.set(key, data, options, callback);
+    });
+};
+
 PettyCache.prototype.set = function(key, value, options, callback) {
     // Options are optional
     if (!callback) {
         callback = options;
+        options = {};
     }
 
     // Store value in local cache with a short expiration
@@ -203,9 +224,7 @@ PettyCache.prototype.set = function(key, value, options, callback) {
         value = null;
     }
 
-    // Default expire is 30 to 60 seconds
-    var expire = (options && options.expire) ? options.expire : random(30000, 60000);
-    this.redisClient.psetex(key, expire, JSON.stringify(value), callback);
+    this.redisClient.psetex(key, options.expire || random(30000, 60000), JSON.stringify(value), callback);
 };
 
 module.exports = PettyCache;

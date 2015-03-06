@@ -5,13 +5,13 @@ A cache module for node.js that uses a two-level cache (in-memory cache for rece
 
 ##Features
 
-**Two-level cache**  
+**Two-level cache**
 Data is cached for 2 to 5 seconds in memory to reduce the amount of calls to Redis.
 
-**Jitter**  
+**Jitter**
 By default, cache values expire from Redis at a random time between 30 and 60 seconds. This helps to prevent a large amount of keys from expiring at the same time in order to avoid thundering herds (http://en.wikipedia.org/wiki/Thundering_herd_problem).
 
-**Double-checked locking**  
+**Double-checked locking**
 Functions executed on cache misses are wrapped in double-checked locking (http://en.wikipedia.org/wiki/Double-checked_locking). This ensures the function called on cache miss will only be executed once in order to prevent cache stampedes (http://en.wikipedia.org/wiki/Cache_stampede).
 
 ## Getting Started
@@ -22,7 +22,7 @@ var PettyCache = require('petty-cache');
 var pettyCache = new PettyCache();
 
 // Fetch some data
-cache.fetch('key', function(callback) {
+pettyCache.fetch('key', function(callback) {
     // This function is called on a cache miss
     fs.readFile('file.txt', callback);
 }, function(err, value) {
@@ -37,7 +37,7 @@ cache.fetch('key', function(callback) {
 
 Creates a new petty-cache client. `port`, `host`, and `options` are passed directly to [redis.createClient()](https://www.npmjs.org/package/redis#redis-createclient-).
 
-###pettyCache.bulkFetch(keys, cacheMissFunction, [options,] callback)
+###PettyCache#bulkFetch(keys, cacheMissFunction, [options,] callback)
 
 Attempts to retrieve the values of the keys specified in the `keys` array. Any keys that aren't found are passed to cacheMissFunction as an array along with a callback that takes an error and an object, expecting the keys of the object to be the keys passed to `cacheMissFunction` and the values to be the values that should be stored in cache for the corresponding key.  Either way, the resulting error or key-value hash of all requested keys is passed to `callback`.
 
@@ -64,7 +64,7 @@ pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
 }
 ```
 
-###pettyCache.fetch(key, cacheMissFunction, [options,] callback)
+###PettyCache#fetch(key, cacheMissFunction, [options,] callback)
 
 Attempts to retrieve the value from cache at the specified key. If it doesn't exist, it executes the specified cacheMissFunction that takes two parameters: an error and a value.  `cacheMissFunction` should retrieve the expected value for the key from another source and pass it to the given callback. Either way, the resulting error or value is passed to `callback`.
 
@@ -88,9 +88,9 @@ pettyCache.fetch('key', function(callback) {
 }
 ```
 
-###pettyCache.get(key, callback)
+###PettyCache#get(key, callback)
 
-Gets the value of key trying the in-memory cache first and Redis second. If the key does not exist `null` is returned.
+Attempts to retrieve the value from cache at the specified key. Retuns `null` if the key doesn't exist.
 
 **Example**
 
@@ -101,7 +101,7 @@ pettyCache.get('key', function(err, value) {
 });
 ```
 
-###pettyCache.lock(key, [options,] callback)
+###PettyCache#lock(key, [options,] callback)
 
 A simple distributed lock. The callback is only called if another entity has not acquired a lock on `key`.  Subsequent attempts to acquire the lock are not made; if you need to retry, you must implement that yourself.
 
@@ -109,7 +109,7 @@ A simple distributed lock. The callback is only called if another entity has not
 
 ```javascript
 pettyCache.lock('resource', function() {
-    console.log('did a thing'); //If multiple processes run simultaneously, only one should print 'did a thing'
+    console.log('did a thing'); // If multiple processes run simultaneously, only one should print 'did a thing'
 });
 ```
 
@@ -121,7 +121,31 @@ pettyCache.lock('resource', function() {
 }
 ```
 
-###pettyCache.set(key, value, [options,] callback)
+###PettyCache#patch(key, value, [options,] callback)
+
+Updates an object at the given key with the property values provided. Sends an error to the callback if the key does not exist.
+
+**Example**
+
+```javascript
+pettyCache.patch('key', { a: 1 }, function(callback) {
+    if (err) {
+        // Handle redis or key not found error
+    }
+
+    // The object stored at 'key' now has a property 'a' with the value 1. Its other values are intact.
+});
+```
+
+**Options**
+
+```javascript
+{
+    expire: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+}
+```
+
+###PettyCache#set(key, value, [options,] callback)
 
 Unconditionally sets a value for a given key.
 
