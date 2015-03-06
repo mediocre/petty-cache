@@ -203,7 +203,7 @@ PettyCache.prototype.patch = function(key, value, options, callback) {
         }
 
         for (var k in value) {
-            data[k] = value[key];
+            data[k] = value[k];
         }
 
         _this.set(key, data, options, callback);
