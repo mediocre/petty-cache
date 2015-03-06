@@ -120,6 +120,30 @@ pettyCache.lock('resource', function() {
 }
 ```
 
+###PettyCache#patch(key, value, [options,] callback)
+
+Updates an object at the given key with the property values provided. Sends an error to the callback if the key does not exist.
+
+**Example**
+
+```javascript
+pettyCache.patch('key', { a: 1 }, function(callback) {
+    if (err) {
+        // Handle redis or key not found error
+    }
+
+    // The object stored at 'key' now has a property 'a' with the value 1. Its other values are intact.
+});
+```
+
+**Options**
+
+```javascript
+{
+    expire: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+}
+```
+
 ###PettyCache#set(key, value, [options,] callback)
 
 Unconditionally sets a value for a given key.
