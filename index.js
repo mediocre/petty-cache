@@ -214,6 +214,7 @@ PettyCache.prototype.set = function(key, value, options, callback) {
     // Options are optional
     if (!callback) {
         callback = options;
+        options = {};
     }
 
     // Store value in local cache with a short expiration
@@ -224,9 +225,7 @@ PettyCache.prototype.set = function(key, value, options, callback) {
         value = null;
     }
 
-    // Default expire is 30 to 60 seconds
-    var expire = (options && options.expire) ? options.expire : random(30000, 60000);
-    this.redisClient.psetex(key, expire, JSON.stringify(value), callback);
+    this.redisClient.psetex(key, options.expire || random(30000, 60000), JSON.stringify(value), callback);
 };
 
 module.exports = PettyCache;
