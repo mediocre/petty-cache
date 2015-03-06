@@ -101,7 +101,7 @@ describe('PettyCache.fetch', function() {
                 throw 'This function should not be called';
             }, function(err, data) {
                 assert.equal(data, null);
-                
+
                 // Wait for local cache to expire
                 setTimeout(function() {
                     pettyCache.fetch(key, function() {
@@ -244,5 +244,31 @@ describe('PettyCache.lock', function() {
                 done();
             });
         }, 2001);
+    });
+});
+
+describe('PettyCache.patch', function() {
+    var key = Math.random().toString();
+
+    before(function(done) {
+        pettyCache.set(key, { a: 1, b: 2, c: 3 }, done);
+    });
+
+    it('PettyCache.patch should fail if the key does not exist', function(done) {
+        pettyCache.patch('xyz', { b: 3 }, function(err) {
+            assert(err, 'No error provided');
+            done();
+        });
+    });
+
+    it('PettyCache.patch should update the values of given object keys', function(done) {
+        pettyCache.patch(key, { b: 4, c: 5 }, function(err) {
+            assert(!err, 'Error: ' + err);
+            pettyCache.get(key, function(err, data) {
+                assert(!err, 'Error: ' + err);
+                assert.deepEqual(data, { a: 1, b: 4, c: 5});
+                done();
+            });
+        });
     });
 });
