@@ -21,9 +21,8 @@ Functions executed on cache misses are wrapped in double-checked locking (http:/
 var PettyCache = require('petty-cache');
 var pettyCache = new PettyCache();
 
-
 // Fetch some data
-cache.fetch('key', function(callback) {
+pettyCache.fetch('key', function(callback) {
     // This function is called on a cache miss
     fs.readFile('file.txt', callback);
 }, function(err, value) {
@@ -34,11 +33,11 @@ cache.fetch('key', function(callback) {
 
 ##API
 
-###new Cache([port, [host, [options]]])
+###new PettyCache([port, [host, [options]]])
 
 Creates a new petty-cache client. `port`, `host`, and `options` are passed directly to [redis.createClient()](https://www.npmjs.org/package/redis#redis-createclient-).
 
-###Cache#bulkFetch(keys, cacheMissFunction, [options,] callback)
+###PettyCache#bulkFetch(keys, cacheMissFunction, [options,] callback)
 
 Attempts to retrieve the values of the keys specified in the `keys` array. Any keys that aren't found are passed to cacheMissFunction as an array along with a callback that takes an error and an object, expecting the keys of the object to be the keys passed to `cacheMissFunction` and the values to be the values that should be stored in cache for the corresponding key.  Either way, the resulting error or key-value hash of all requested keys is passed to `callback`.
 
@@ -46,7 +45,7 @@ Attempts to retrieve the values of the keys specified in the `keys` array. Any k
 
 ```javascript
 // Let's assume a and b are already cached as 1 and 2
-cache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
+pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
     var results = {};
     
     keys.forEach(function(key) {
@@ -65,14 +64,14 @@ cache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
 }
 ```
 
-###Cache#fetch(key, cacheMissFunction, [options,] callback)
+###PettyCache#fetch(key, cacheMissFunction, [options,] callback)
 
 Attempts to retrieve the value from cache at the specified key. If it doesn't exist, it executes the specified cacheMissFunction that takes two parameters: an error and a value.  `cacheMissFunction` should retrieve the expected value for the key from another source and pass it to the given callback. Either way, the resulting error or value is passed to `callback`.
 
 **Example**
 
 ```javascript
-cache.fetch('key', function(callback) {
+pettyCache.fetch('key', function(callback) {
     // This function is called on a cache miss
     fs.readFile('file.txt', callback);
 }, function(err, value) {
@@ -89,27 +88,27 @@ cache.fetch('key', function(callback) {
 }
 ```
 
-###Cache#get(key, callback)
+###PettyCache#get(key, callback)
 
 Attempts to retrieve the value from cache at the specified key. Retuns `null` if the key doesn't exist.
 
 **Example**
 
 ```javascript
-cache.get('key', function(err, value) {
+pettyCache.get('key', function(err, value) {
     console.log(value);
 });
 ```
 
-###Cache#lock(key, [options,] callback)
+###PettyCache#lock(key, [options,] callback)
 
 A simple distributed lock. The callback is only called if another entity has not acquired a lock on `key`.  Subsequent attempts to acquire the lock are not made; if you need to retry, you must implement that yourself.
 
 **Example**
 
 ```javascript
-cache.lock('resource', function() {
-    console.log('did a thing'); //If multiple processes run simultaneously, only one should print 'did a thing'
+pettyCache.lock('resource', function() {
+    console.log('did a thing'); // If multiple processes run simultaneously, only one should print 'did a thing'
 });
 ```
 
@@ -121,14 +120,14 @@ cache.lock('resource', function() {
 }
 ```
 
-###Cache#set(key, value, [options,] callback)
+###PettyCache#set(key, value, [options,] callback)
 
 Unconditionally sets a value for a given key.
 
 **Example**
 
 ```javascript
-cache.set('key', { a: 'b' }, function(err) {
+pettyCache.set('key', { a: 'b' }, function(err) {
     if (err) {
         // Handle redis error
     }
