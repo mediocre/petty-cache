@@ -89,6 +89,18 @@ cache.fetch('key', function(callback) {
 }
 ```
 
+###Cache#get(key, callback)
+
+Attempts to retrieve the value from cache at the specified key. Retuns `null` if the key doesn't exist.
+
+**Example**
+
+```javascript
+cache.get('key', function(err, value) {
+    console.log(value);
+});
+```
+
 ###Cache#lock(key, [options,] callback)
 
 A simple distributed lock. The callback is only called if another entity has not acquired a lock on `key`.  Subsequent attempts to acquire the lock are not made; if you need to retry, you must implement that yourself.
