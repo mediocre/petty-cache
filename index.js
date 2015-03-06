@@ -160,13 +160,12 @@ PettyCache.prototype.get = function(key, callback) {
     }
 
     this.redisClient.get(key, function(err, data) {
-        if (err || !data) {
+        if (err || data === null) {
             return callback(err, data);
         }
 
-        var result = JSON.parse(data);
         memoryCache.put(key, data, random(2000, 5000));
-        callback(null, result);
+        callback(null, JSON.parse(data));
     });
 };
 

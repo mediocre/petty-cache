@@ -173,31 +173,35 @@ describe('PettyCache.fetch', function() {
 });
 
 describe('PettyCache.get', function() {
-    it('PettyCache.get', function(done) {
-        this.timeout(14000);
+    it('PettyCache.get should return value', function(done) {
+        this.timeout(7000);
 
         var key = Math.random().toString();
 
-        pettyCache.get(key, function(err, data) {
-            assert.equal(data, null);
+        pettyCache.set(key, 'hello world', function() {
+            pettyCache.get(key, function(err, value) {
+                assert.equal(value, 'hello world');
 
-            pettyCache.set(key, 'Hello World', { expire: 6000 }, function() {
-                pettyCache.get(key, function(err, data) {
-                    assert.equal(data, 'Hello World');
+                // Wait for local cache to expire
+                setTimeout(function() {
+                    pettyCache.get(key, function(err, value) {
+                        assert.equal(value, 'hello world');
+                        done();
+                    });
+                }, 6000);
+            });
+        });
+    });
 
-                    setTimeout(function() {
-                        pettyCache.get(key, function(err, data) {
-                            assert.equal(data, 'Hello World');
+    it('PettyCache.get should return null for missing keys', function(done) {
+        var key = Math.random().toString();
 
-                            setTimeout(function() {
-                                pettyCache.get(key, function(err, data) {
-                                    assert.equal(data, null);
-                                    done();
-                                });
-                            }, 6001);
-                        });
-                    }, 5001);
-                });
+        pettyCache.get(key, function(err, value) {
+            assert.equal(value, null);
+
+            pettyCache.get(key, function(err, value) {
+                assert.equal(value, null);
+                done();
             });
         });
     });
@@ -268,6 +272,47 @@ describe('PettyCache.patch', function() {
                 assert(!err, 'Error: ' + err);
                 assert.deepEqual(data, { a: 1, b: 4, c: 5});
                 done();
+            });
+        });
+    });
+});
+describe('PettyCache.set', function() {
+    it('PettyCache.set should set a value', function(done) {
+        this.timeout(7000);
+
+        var key = Math.random().toString();
+
+        pettyCache.set(key, 'hello world', function() {
+            pettyCache.get(key, function(err, value) {
+                assert.equal(value, 'hello world');
+
+                // Wait for local cache to expire
+                setTimeout(function() {
+                    pettyCache.get(key, function(err, value) {
+                        assert.equal(value, 'hello world');
+                        done();
+                    });
+                }, 6000);
+            });
+        });
+    });
+
+    it('PettyCache.set should set a value with the specified expire option', function(done) {
+        this.timeout(7000);
+
+        var key = Math.random().toString();
+
+        pettyCache.set(key, 'hello world', { expire: 6000 },function() {
+            pettyCache.get(key, function(err, value) {
+                assert.equal(value, 'hello world');
+
+                // Wait for cache to expire
+                setTimeout(function() {
+                    pettyCache.get(key, function(err, value) {
+                        assert.equal(value, null);
+                        done();
+                    });
+                }, 6001);
             });
         });
     });

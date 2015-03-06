@@ -5,13 +5,13 @@ A cache module for node.js that uses a two-level cache (in-memory cache for rece
 
 ##Features
 
-**Two-level cache**  
+**Two-level cache**
 Data is cached for 2 to 5 seconds in memory to reduce the amount of calls to Redis.
 
-**Jitter**  
+**Jitter**
 By default, cache values expire from Redis at a random time between 30 and 60 seconds. This helps to prevent a large amount of keys from expiring at the same time in order to avoid thundering herds (http://en.wikipedia.org/wiki/Thundering_herd_problem).
 
-**Double-checked locking**  
+**Double-checked locking**
 Functions executed on cache misses are wrapped in double-checked locking (http://en.wikipedia.org/wiki/Double-checked_locking). This ensures the function called on cache miss will only be executed once in order to prevent cache stampedes (http://en.wikipedia.org/wiki/Cache_stampede).
 
 ## Getting Started
@@ -96,6 +96,7 @@ Attempts to retrieve the value from cache at the specified key. Retuns `null` if
 
 ```javascript
 pettyCache.get('key', function(err, value) {
+    // `value` contains the value of the key if it was found in the in-memory cache or Redis. `value` is `null` if the key was not found.
     console.log(value);
 });
 ```
