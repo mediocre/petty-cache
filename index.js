@@ -165,6 +165,36 @@ PettyCache.prototype.lock = function(key, options, callback) {
     });
 };
 
+PettyCache.prototype.patch = function(key, value, options, callback) {
+    if (!callback) {
+        callback = options;
+    }
+
+    var _this = this;
+
+    var currentValue = memoryCache.get(key);
+
+    var merge = function() {
+        for (var key in value) {
+            currentValue[key] = value[key];
+        }
+        _this.set(key, currentValue, callback);
+    };
+
+    if (currentValue) {
+        merge();
+    } else {
+        this.redisClient.get(key, function(err, data) {
+            if (data) {
+                currentValue = JSON.parse(data);
+                merge();
+            } else {
+                callback(new Error('Key does not exist'));
+            }
+        });
+    }
+};
+
 PettyCache.prototype.set = function(key, value, options, callback) {
     // Options are optional
     if (!callback) {
