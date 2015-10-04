@@ -4,7 +4,7 @@
     "async": "1.4.x",
     "lock": "0.1.x",
     "memory-cache": "0.1.x",
-    "redis": "1.0.x"
+    "redis": "2.1.x"
   },
   "devDependencies": {
     "mocha": "*"
@@ -27,5 +27,5 @@
   "bugs": {
     "url": "https://github.com/mediocre/petty-cache/issues"
   },
-  "version": "1.2.2"
+  "version": "1.2.3"
 }
