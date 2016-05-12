@@ -146,7 +146,7 @@ PettyCache.prototype.fetch = function(key, func, options, callback) {
                     _this.set(key, data, options, release(function(err) { callback(err, data); }));
                 });
             });
-        }); 
+        });
     });
 };
 

@@ -1,8 +1,0 @@
-{
-    "browser": false,
-    "node": true,
-    "predef": ["after", "afterEach", "before", "beforeEach", "describe", "it" ],
-    "strict": false,
-    "undef": true,
-    "unused": true
-}

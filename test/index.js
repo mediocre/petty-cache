@@ -17,11 +17,11 @@ describe('PettyCache.bulkFetch', function() {
                     assert.strictEqual(values.b, '2');
                     assert.strictEqual(values.c[0], 3);
                     assert.strictEqual(values.d.num, 4);
-                    
+
                     // Wait for local cache to expire
                     setTimeout(function() {
                         pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function() {
-                            throw 'This function should not be called'; 
+                            throw 'This function should not be called';
                         }, function(err, values) {
                             assert.strictEqual(values.a, 1);
                             assert.strictEqual(values.b, '2');
@@ -75,7 +75,7 @@ describe('PettyCache.fetch', function() {
                 throw 'This function should not be called';
             }, function(err, data) {
                 assert.equal(data, null);
-                
+
                 // Wait for local cache to expire
                 setTimeout(function() {
                     pettyCache.fetch(key, function() {
@@ -134,7 +134,7 @@ describe('PettyCache.fetch', function() {
         pettyCache.fetch(key, func, function() {});
         pettyCache.fetch(key, func, function() {});
         pettyCache.fetch(key, func, function() {});
-        
+
         pettyCache.fetch(key, func, function(err, data) {
             assert.equal(data, 1);
             done();
@@ -154,7 +154,7 @@ describe('PettyCache.fetch', function() {
         };
 
         pettyCache.fetch(key, func, { expire: 6000 }, function() {});
-        
+
         pettyCache.fetch(key, func, { expire: 6000 }, function(err, data) {
             assert.equal(data, 1);
 
@@ -270,7 +270,7 @@ describe('PettyCache.patch', function() {
             assert(!err, 'Error: ' + err);
             pettyCache.get(key, function(err, data) {
                 assert(!err, 'Error: ' + err);
-                assert.deepEqual(data, { a: 1, b: 4, c: 5});
+                assert.deepEqual(data, { a: 1, b: 4, c: 5 });
                 done();
             });
         });
