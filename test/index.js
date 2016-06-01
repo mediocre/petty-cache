@@ -260,12 +260,13 @@ describe('PettyCache.mutex', function() {
 
             pettyCache.mutex.lock(key);
 
-            pettyCache.mutex.lock(key, () => {
-                throw 'This function should not be called';
+            pettyCache.mutex.lock(key, (err) => {
+                assert(err);
             });
 
             setTimeout(function() {
-                pettyCache.mutex.lock(key, () => {
+                pettyCache.mutex.lock(key, (err) => {
+                    assert.ifError(err);
                     done();
                 });
             }, 1001);
@@ -278,18 +279,19 @@ describe('PettyCache.mutex', function() {
 
             pettyCache.mutex.lock(key, { ttl: 2000 });
 
-            pettyCache.mutex.lock(key, () => {
-                throw 'This function should not be called';
+            pettyCache.mutex.lock(key, (err) => {
+                assert(err);
             });
 
             setTimeout(function() {
-                pettyCache.mutex.lock(key, () => {
-                    throw 'This function should not be called';
+                pettyCache.mutex.lock(key, (err) => {
+                    assert(err);
                 });
             }, 1001);
 
             setTimeout(function() {
-                pettyCache.mutex.lock(key, () => {
+                pettyCache.mutex.lock(key, (err) => {
+                    assert.ifError(err);
                     done();
                 });
             }, 2001);

@@ -196,13 +196,13 @@ PettyCache.prototype.lock = util.deprecate(function(key, options, callback) {
 PettyCache.prototype.mutex = {
     lock: function(key, options, callback) {
         // Options are optional
-        if (!options && !callback) {
-            callback = () => {};
-            options = {};
-        } else if (!callback && typeof options === 'function') {
+        if (!callback && typeof options === 'function') {
             callback = options;
             options = {};
         }
+
+        callback = callback || function() {};
+        options = options || {};
 
         options.retry = options.hasOwnProperty('retry') ? options.retry : {};
         options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 1000;
@@ -210,6 +210,7 @@ PettyCache.prototype.mutex = {
         options.ttl = options.hasOwnProperty('ttl') ? options.ttl : 1000;
 
         const _this = this;
+
         async.retry({ interval: options.retry.interval, times: options.retry.times }, function(callback) {
             _this.redisClient.set(key, '1', 'NX', 'PX', options.ttl, function(err, res) {
                 if (err) {
