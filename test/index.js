@@ -399,6 +399,31 @@ describe('PettyCache.semaphore', function() {
                 });
             });
         });
+
+        it('should aquire a slot after ttl', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquire(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquire(key, function(err) {
+                        assert(err);
+
+                        setTimeout(function() {
+                            pettyCache.semaphore.acquire(key, function(err, index) {
+                                assert.ifError(err);
+                                assert.equal(index, 0);
+                                done();
+                            });
+                        }, 1001);
+                    });
+                });
+            });
+        });
     });
 
     describe('PettyCache.semaphore.retrieveOrCreate', function() {
@@ -409,13 +434,13 @@ describe('PettyCache.semaphore', function() {
                 assert.ifError(err);
                 assert(semaphore);
                 assert.equal(semaphore.length, 100);
-                assert(semaphore.every(s => s === 'available'));
+                assert(semaphore.every(s => s.status === 'available'));
 
                 pettyCache.semaphore.retrieveOrCreate(key, function(err, semaphore) {
                     assert.ifError(err);
                     assert(semaphore);
                     assert.equal(semaphore.length, 100);
-                    assert(semaphore.every(s => s === 'available'));
+                    assert(semaphore.every(s => s.status === 'available'));
                     done();
                 });
             });

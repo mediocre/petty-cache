@@ -280,6 +280,7 @@ PettyCache.prototype.semaphore = {
         options.retry = options.hasOwnProperty('retry') ? options.retry : {};
         options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 1000;
         options.retry.times = options.retry.hasOwnProperty('times') ? options.retry.times : 1;
+        options.ttl = options.hasOwnProperty('ttl') ? options.ttl : 1000;
 
         const _this = this;
 
@@ -302,21 +303,27 @@ PettyCache.prototype.semaphore = {
                     }
 
                     var pool = JSON.parse(data);
-                    var availableIndex = pool.indexOf('available');
+
+                    // Try to find a slot that's available.
+                    var index = pool.findIndex(s => s.status === 'available');
+
+                    if (index === -1) {
+                        index = pool.findIndex(s => s.ttl <= Date.now());
+                    }
 
                     // If we don't have a previously created semaphore, unlock the mutext lock and return error
-                    if (availableIndex === -1) {
+                    if (index === -1) {
                         return _this.mutex.unlock(`lock:${key}`, () => { callback(new Error(`Semaphore ${key} doesn't have any available slots.`)); });
                     }
 
-                    pool[availableIndex] = 'acquired';
+                    pool[index] = { status: 'acquired', ttl: Date.now() + options.ttl };
 
                     _this.redisClient.set(key, JSON.stringify(pool), function(err) {
                         if (err) {
                             return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
                         }
 
-                        _this.mutex.unlock(`lock:${key}`, () => { callback(null, availableIndex); });
+                        _this.mutex.unlock(`lock:${key}`, () => { callback(null, index); });
                     });
                 });
             });
@@ -354,7 +361,7 @@ PettyCache.prototype.semaphore = {
 
                 options.size = options.hasOwnProperty('size') ? options.size : 1;
 
-                var pool = Array(options.size).fill('available');
+                var pool = Array(options.size).fill({ status: 'available' });
 
                 _this.redisClient.set(key, JSON.stringify(pool), function(err) {
                     if (err) {
