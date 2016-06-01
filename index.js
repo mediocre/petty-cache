@@ -6,11 +6,14 @@ const memoryCache = require('memory-cache');
 const redis = require('redis');
 
 function PettyCache(port, host, options) {
-    console.log(this.set);
     this.redisClient = redis.createClient(port || 6379, host || '127.0.0.1', options);
 
     // Mutex functions need to be bound to the main PettyCache object
-    this.mutex.lock = this.mutex.lock.bind(this);
+    for (let method in this.mutex) {
+        if (typeof this.mutex[method] === 'function') {
+            this.mutex[method] = this.mutex[method].bind(this);
+        }
+    }
 }
 
 function random(min, max) {
