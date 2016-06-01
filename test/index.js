@@ -314,6 +314,29 @@ describe('PettyCache.mutex', function() {
             });
         });
     });
+
+    describe('PettyCache.mutex.unlock', function() {
+        it('PettyCache.mutex.unlock should unlock', function(done) {
+            this.timeout(5000);
+
+            var key = Math.random().toString();
+
+            pettyCache.mutex.lock(key, { ttl: 10000 }, function(err) {
+                assert.ifError(err);
+
+                pettyCache.mutex.lock(key, (err) => {
+                    assert(err);
+
+                    pettyCache.mutex.unlock(key, () => {
+                        pettyCache.mutex.lock(key, function(err) {
+                            assert.ifError(err);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+    });
 });
 
 describe('PettyCache.patch', function() {

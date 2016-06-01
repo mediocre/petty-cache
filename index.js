@@ -228,6 +228,10 @@ PettyCache.prototype.mutex = {
                 callback();
             });
         }, callback);
+    },
+    unlock: function(key, callback) {
+        callback = callback || function() {};
+        this.redisClient.del(key, callback);
     }
 };
 
