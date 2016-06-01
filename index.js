@@ -6,44 +6,11 @@ const memoryCache = require('memory-cache');
 const redis = require('redis');
 
 function PettyCache(port, host, options) {
+    console.log(this.set);
     this.redisClient = redis.createClient(port || 6379, host || '127.0.0.1', options);
 
     // Mutex functions need to be bound to the main PettyCache object
-    this.mutex = {};
-    this.mutex.lock = (function(key, options, callback) {
-        // Options are optional
-        if (!options && !callback) {
-            callback = () => {};
-            options = {};
-        } else if (!callback && typeof options === 'function') {
-            callback = options;
-            options = {};
-        }
-
-        options.retry = options.hasOwnProperty('retry') ? options.retry : {};
-        options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 1000;
-        options.retry.times = options.retry.hasOwnProperty('times') ? options.retry.times : 1;
-        options.ttl = options.hasOwnProperty('ttl') ? options.ttl : 1000;
-
-        const _this = this;
-        async.retry({ interval: options.retry.interval, times: options.retry.times }, function(callback) {
-            _this.redisClient.set(key, '1', 'NX', 'PX', options.ttl, function(err, res) {
-                if (err) {
-                    return callback(err);
-                }
-
-                if (!res) {
-                    return callback(new Error());
-                }
-
-                if (res !== 'OK') {
-                    return callback(new Error(res));
-                }
-
-                callback();
-            });
-        }, callback);
-    }).bind(this);
+    this.mutex.lock = this.mutex.lock.bind(this);
 }
 
 function random(min, max) {
@@ -222,6 +189,43 @@ PettyCache.prototype.lock = util.deprecate(function(key, options, callback) {
         }
     });
 }, 'PettyCache.lock is deprecated. Use PettyCache.mutex.lock.');
+
+PettyCache.prototype.mutex = {
+    lock: function(key, options, callback) {
+        // Options are optional
+        if (!options && !callback) {
+            callback = () => {};
+            options = {};
+        } else if (!callback && typeof options === 'function') {
+            callback = options;
+            options = {};
+        }
+
+        options.retry = options.hasOwnProperty('retry') ? options.retry : {};
+        options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 1000;
+        options.retry.times = options.retry.hasOwnProperty('times') ? options.retry.times : 1;
+        options.ttl = options.hasOwnProperty('ttl') ? options.ttl : 1000;
+
+        const _this = this;
+        async.retry({ interval: options.retry.interval, times: options.retry.times }, function(callback) {
+            _this.redisClient.set(key, '1', 'NX', 'PX', options.ttl, function(err, res) {
+                if (err) {
+                    return callback(err);
+                }
+
+                if (!res) {
+                    return callback(new Error());
+                }
+
+                if (res !== 'OK') {
+                    return callback(new Error(res));
+                }
+
+                callback();
+            });
+        }, callback);
+    }
+};
 
 PettyCache.prototype.patch = function(key, value, options, callback) {
     var _this = this;
