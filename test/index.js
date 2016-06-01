@@ -296,6 +296,23 @@ describe('PettyCache.mutex', function() {
                 });
             }, 2001);
         });
+
+        it('PettyCache.mutex.lock should acquire a lock after retries', function(done) {
+            this.timeout(5000);
+
+            var key = Math.random().toString();
+
+            pettyCache.mutex.lock(key, { ttl: 2000 });
+
+            pettyCache.mutex.lock(key, (err) => {
+                assert(err);
+            });
+
+            pettyCache.mutex.lock(key, { retry: { interval: 500, times: 10 } }, (err) => {
+                assert.ifError(err);
+                done();
+            });
+        });
     });
 });
 
