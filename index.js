@@ -1,7 +1,9 @@
-var async = require('async');
-var lock = require('lock')();
-var memoryCache = require('memory-cache');
-var redis = require('redis');
+const util = require('util');
+
+const async = require('async');
+const lock = require('lock')();
+const memoryCache = require('memory-cache');
+const redis = require('redis');
 
 function PettyCache(port, host, options) {
     this.redisClient = redis.createClient(port || 6379, host || '127.0.0.1', options);
@@ -169,7 +171,7 @@ PettyCache.prototype.get = function(key, callback) {
     });
 };
 
-PettyCache.prototype.lock = function(key, options, callback) {
+PettyCache.prototype.lock = util.deprecate((key, options, callback) => {
     // Options are optional
     if (!callback && typeof options === 'function') {
         callback = options;
@@ -182,6 +184,42 @@ PettyCache.prototype.lock = function(key, options, callback) {
             callback();
         }
     });
+}, 'PettyCache.lock is deprecated. Use PettyCache.mutex.lock.');
+
+PettyCache.prototype.mutex = {
+    lock: function(key, options, callback) {
+        // Options are optional
+        if (!options && !callback) {
+            callback = () => {};
+            options = {};
+        } else if (!callback && typeof options === 'function') {
+            callback = options;
+            options = {};
+        }
+
+        options.retry = options.hasOwnProperty('retry') ? options.retry : {};
+        options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 1000;
+        options.retry.times = options.retry.hasOwnProperty('times') ? options.retry.times : 1;
+        options.ttl = options.hasOwnProperty('ttl') ? options.ttl : 1000;
+
+        async.retry({ interval: options.retry.interval, times: options.retry.times }, function(callback) {
+            this.redisClient.set(key, '1', 'NX', 'PX', options.ttl, function(err, res) {
+                if (err) {
+                    return callback(err);
+                }
+
+                if (!res) {
+                    return callback(new Error());
+                }
+
+                if (res !== 'OK') {
+                    return callback(new Error(res));
+                }
+
+                callback();
+            });
+        }, callback);
+    }
 };
 
 PettyCache.prototype.patch = function(key, value, options, callback) {

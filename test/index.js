@@ -251,6 +251,52 @@ describe('PettyCache.lock', function() {
     });
 });
 
+describe('PettyCache.mutex', function() {
+    describe('PettyCache.mutex.lock', function() {
+        it('PettyCache.mutex.lock should lock for 1 second by default', function(done) {
+            this.timeout(2000);
+
+            var key = Math.random().toString();
+
+            pettyCache.mutex.lock(key);
+
+            pettyCache.mutex.lock(key, () => {
+                throw 'This function should not be called';
+            });
+
+            setTimeout(function() {
+                pettyCache.mutex.lock(key, () => {
+                    done();
+                });
+            }, 1001);
+        });
+
+        it('PettyCache.mutex.lock should lock for 2 seconds when ttl parameter is specified', function(done) {
+            this.timeout(3000);
+
+            var key = Math.random().toString();
+
+            pettyCache.mutex.lock(key, { ttl: 2000 });
+
+            pettyCache.mutex.lock(key, () => {
+                throw 'This function should not be called';
+            });
+
+            setTimeout(function() {
+                pettyCache.mutex.lock(key, () => {
+                    throw 'This function should not be called';
+                });
+            }, 1001);
+
+            setTimeout(function() {
+                pettyCache.mutex.lock(key, () => {
+                    done();
+                });
+            }, 2001);
+        });
+    });
+});
+
 describe('PettyCache.patch', function() {
     var key = Math.random().toString();
 
