@@ -362,6 +362,45 @@ describe('PettyCache.patch', function() {
 });
 
 describe('PettyCache.semaphore', function() {
+    describe('PettyCache.semaphore.acquire', function() {
+        it('should aquire a slot', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 10 }, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquire(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquire(key, function(err, index) {
+                        assert.ifError(err);
+                        assert.equal(index, 1);
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('should not aquire a slot', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquire(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquire(key, function(err) {
+                        assert(err);
+                        done();
+                    });
+                });
+            });
+        });
+    });
+
     describe('PettyCache.semaphore.retrieveOrCreate', function() {
         it('should create a new semaphore', function(done) {
             var key = Math.random().toString();
