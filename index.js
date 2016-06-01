@@ -14,6 +14,13 @@ function PettyCache(port, host, options) {
             this.mutex[method] = this.mutex[method].bind(this);
         }
     }
+
+    // Semaphore functions need to be bound to the main PettyCache object
+    for (let method in this.semaphore) {
+        if (typeof this.semaphore[method] === 'function') {
+            this.semaphore[method] = this.semaphore[method].bind(this);
+        }
+    }
 }
 
 function random(min, max) {
@@ -258,6 +265,55 @@ PettyCache.prototype.patch = function(key, value, options, callback) {
 
         _this.set(key, data, options, callback);
     });
+};
+
+PettyCache.prototype.semaphore = {
+    retrieveOrCreate: function(key, options, callback) {
+        // Options are optional
+        if (!callback && typeof options === 'function') {
+            callback = options;
+            options = {};
+        }
+
+        callback = callback || function() {};
+        options = options || {};
+
+        const _this = this;
+
+        // Mutex lock around semaphore retrival or creation
+        this.mutex.lock(`lock:${key}`, { retry: { interval: 100, retry: 10 } }, function(err) {
+            if (err) {
+                return callback(err);
+            }
+
+            // Try to get previously created semaphore
+            _this.redisClient.get(key, function(err, data) {
+                // If we encountered an error, unlock the mutext lock and return
+                if (err) {
+                    return _this.mutex.unlock(`lock:${key}`, function() {
+                        callback(err);
+                    });
+                }
+
+                // If we retreived a previously created semaphore, unlock the mutext lock and return
+                if (data) {
+                    return _this.mutex.unlock(`lock:${key}`, function() {
+                        callback(null, JSON.parse(data));
+                    });
+                }
+
+                options.size = options.hasOwnProperty('size') ? options.size : 1;
+
+                var pool = Array(options.size).fill('available');
+
+                _this.redisClient.set(key, JSON.stringify(pool), function(err) {
+                    _this.mutex.unlock(`lock:${key}`, function() {
+                        callback(err, pool);
+                    });
+                });
+            });
+        });
+    }
 };
 
 PettyCache.prototype.set = function(key, value, options, callback) {

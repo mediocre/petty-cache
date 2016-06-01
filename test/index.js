@@ -254,8 +254,6 @@ describe('PettyCache.lock', function() {
 describe('PettyCache.mutex', function() {
     describe('PettyCache.mutex.lock', function() {
         it('PettyCache.mutex.lock should lock for 1 second by default', function(done) {
-            this.timeout(2000);
-
             var key = Math.random().toString();
 
             pettyCache.mutex.lock(key);
@@ -298,7 +296,7 @@ describe('PettyCache.mutex', function() {
         });
 
         it('PettyCache.mutex.lock should acquire a lock after retries', function(done) {
-            this.timeout(5000);
+            this.timeout(3000);
 
             var key = Math.random().toString();
 
@@ -317,8 +315,6 @@ describe('PettyCache.mutex', function() {
 
     describe('PettyCache.mutex.unlock', function() {
         it('PettyCache.mutex.unlock should unlock', function(done) {
-            this.timeout(5000);
-
             var key = Math.random().toString();
 
             pettyCache.mutex.lock(key, { ttl: 10000 }, function(err) {
@@ -364,6 +360,30 @@ describe('PettyCache.patch', function() {
         });
     });
 });
+
+describe('PettyCache.semaphore', function() {
+    describe('PettyCache.semaphore.retrieveOrCreate', function() {
+        it('should create a new semaphore', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 100 }, function(err, semaphore) {
+                assert.ifError(err);
+                assert(semaphore);
+                assert.equal(semaphore.length, 100);
+                assert(semaphore.every(s => s === 'available'));
+
+                pettyCache.semaphore.retrieveOrCreate(key, function(err, semaphore) {
+                    assert.ifError(err);
+                    assert(semaphore);
+                    assert.equal(semaphore.length, 100);
+                    assert(semaphore.every(s => s === 'available'));
+                    done();
+                });
+            });
+        });
+    });
+});
+
 describe('PettyCache.set', function() {
     it('PettyCache.set should set a value', function(done) {
         this.timeout(7000);
