@@ -177,10 +177,10 @@ pettyCache.mutex.lock('key', { retry: { interval: 200, times: 3 }, ttl: 1000 }, 
 ```javascript
 {
     retry: {
-        interval: 200, // The time in milliseconds between attempts to acquire the lock
-        times: 1 // The number of attempts to acquire the lock
+        interval: 200, // The time in milliseconds between attempts to acquire the lock.
+        times: 1 // The number of attempts to acquire the lock.
     },
-    ttl: 1000 // The maximum amount of time to keep the lock locked before automatically being unlocked
+    ttl: 1000 // The maximum amount of time to keep the lock locked before automatically being unlocked.
 }
 ```
 
@@ -191,7 +191,116 @@ Releases the distributed lock for the specified key.
 ```javascript
 pettyCache.mutex.lock('key', function(err) {
     if (err) {
-        // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error
+        // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error.
     }
 });
+```
+
+## Semaphore
+
+Provides a pool of distributed locks. Once a consumer acquires a lock they have the ability to release the lock back to the pool or remove the lock from the pool so that it's not used again.
+
+**Example**
+
+```javascript
+// Create a new semaphore
+pettyCache.semaphore.retrieveOrCreate('key', { size: 10 }, function(err) {
+    if (err) {
+        // Aw, snap! We couldn't create the semaphore
+    }
+
+    // Acquire a lock from the semaphore's pool
+    pettyCache.semaphore.acquire('key', { retry: { interval: 200, times: 3 }, ttl: 1000 }, function(err, index) {
+        if (err) {
+            // We couldn't acquire a lock from the semaphore's pool (even after trying 3 times every 200 milliseconds).
+        }
+
+        // We were able to acquire a lock from the semaphore's pool. Do work and then release the lock.
+        pettyCache.semaphore.release('key', index, function(err) {
+            if (err) {
+                // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error.
+            }
+        });
+
+        // Or, rather than releasing the lock back to the semaphore's pool you can mark the lock as "consumed" to prevent it from being used again.
+        pettyCache.semaphore.consume('key', index, function(err) {
+            if (err) {
+                // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error.
+            }
+        });
+    });
+});
+```
+
+###pettyCache.semaphore.acquire(key, [options, [callback]])
+
+Attempts to acquire a lock from the semaphore's pool. Optionally retries a specified number of times by waiting a specified amount of time between attempts.
+
+```javascript
+// Acquire a lock from the semaphore's pool
+pettyCache.semaphore.acquire('key', { retry: { interval: 200, times: 3 }, ttl: 1000 }, function(err, index) {
+    if (err) {
+        // We couldn't acquire a lock from the semaphore's pool (even after trying 3 times every 200 milliseconds).
+    }
+
+    // We were able to acquire a lock from the semaphore's pool. Do work and then release the lock.
+});
+```
+
+**Options**
+
+```javascript
+{
+    retry: {
+        interval: 200, // The time in milliseconds between attempts to acquire the lock.
+        times: 1 // The number of attempts to acquire the lock.
+    },
+    ttl: 1000 // The maximum amount of time to keep the lock locked before automatically being unlocked.
+}
+```
+
+###pettyCache.semaphore.consume(key, index, [callback])
+
+Mark the lock at the specified index as "consumed" to prevent it from being used again.
+
+```javascript
+pettyCache.mutex.consume('key', index, function(err) {
+    if (err) {
+        // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error.
+    }
+});
+```
+
+###pettyCache.semaphore.release(key, index, [callback])
+
+Releases the lock at the specified index back to the semaphore's pool so that it can be used again.
+
+```javascript
+pettyCache.mutex.release('key', index, function(err) {
+    if (err) {
+        // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error.
+    }
+});
+```
+
+###pettyCache.semaphore.retrieveOrCreate(key, [options, [callback]])
+
+Retrieves a previously created semaphore or creates a new semaphore with the optionally specified number of locks in its pool.
+
+```javascript
+// Create a new semaphore
+pettyCache.semaphore.retrieveOrCreate('key', { size: 10 }, function(err) {
+    if (err) {
+        // Aw, snap! We couldn't create the semaphore
+    }
+
+    // Your semaphore was created.
+});
+```
+**Options**
+
+```javascript
+{
+    size: 1 // The number of locks to create in the semaphore's pool.
+}
 ```
