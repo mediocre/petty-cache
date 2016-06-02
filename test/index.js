@@ -251,6 +251,90 @@ describe('PettyCache.lock', function() {
     });
 });
 
+describe('PettyCache.mutex', function() {
+    describe('PettyCache.mutex.lock', function() {
+        it('PettyCache.mutex.lock should lock for 1 second by default', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.mutex.lock(key);
+
+            pettyCache.mutex.lock(key, (err) => {
+                assert(err);
+            });
+
+            setTimeout(function() {
+                pettyCache.mutex.lock(key, (err) => {
+                    assert.ifError(err);
+                    done();
+                });
+            }, 1001);
+        });
+
+        it('PettyCache.mutex.lock should lock for 2 seconds when ttl parameter is specified', function(done) {
+            this.timeout(3000);
+
+            var key = Math.random().toString();
+
+            pettyCache.mutex.lock(key, { ttl: 2000 });
+
+            pettyCache.mutex.lock(key, (err) => {
+                assert(err);
+            });
+
+            setTimeout(function() {
+                pettyCache.mutex.lock(key, (err) => {
+                    assert(err);
+                });
+            }, 1001);
+
+            setTimeout(function() {
+                pettyCache.mutex.lock(key, (err) => {
+                    assert.ifError(err);
+                    done();
+                });
+            }, 2001);
+        });
+
+        it('PettyCache.mutex.lock should acquire a lock after retries', function(done) {
+            this.timeout(3000);
+
+            var key = Math.random().toString();
+
+            pettyCache.mutex.lock(key, { ttl: 2000 });
+
+            pettyCache.mutex.lock(key, (err) => {
+                assert(err);
+            });
+
+            pettyCache.mutex.lock(key, { retry: { interval: 500, times: 10 } }, (err) => {
+                assert.ifError(err);
+                done();
+            });
+        });
+    });
+
+    describe('PettyCache.mutex.unlock', function() {
+        it('PettyCache.mutex.unlock should unlock', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.mutex.lock(key, { ttl: 10000 }, function(err) {
+                assert.ifError(err);
+
+                pettyCache.mutex.lock(key, (err) => {
+                    assert(err);
+
+                    pettyCache.mutex.unlock(key, () => {
+                        pettyCache.mutex.lock(key, function(err) {
+                            assert.ifError(err);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 describe('PettyCache.patch', function() {
     var key = Math.random().toString();
 
@@ -276,6 +360,192 @@ describe('PettyCache.patch', function() {
         });
     });
 });
+
+describe('PettyCache.semaphore', function() {
+    describe('PettyCache.semaphore.acquire', function() {
+        it('should aquire a slot', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 10 }, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquire(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquire(key, function(err, index) {
+                        assert.ifError(err);
+                        assert.equal(index, 1);
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('should not aquire a slot', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquire(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquire(key, function(err) {
+                        assert(err);
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('should aquire a slot after ttl', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquire(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquire(key, function(err) {
+                        assert(err);
+
+                        setTimeout(function() {
+                            pettyCache.semaphore.acquire(key, function(err, index) {
+                                assert.ifError(err);
+                                assert.equal(index, 0);
+                                done();
+                            });
+                        }, 1001);
+                    });
+                });
+            });
+        });
+    });
+
+    describe('PettyCache.semaphore.consume', function() {
+        it('should consume a slot', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquire(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquire(key, function(err, index) {
+                        assert.ifError(err);
+                        assert.equal(index, 1);
+
+                        pettyCache.semaphore.acquire(key, function(err) {
+                            assert(err);
+
+                            pettyCache.semaphore.consume(key, 0, function(err) {
+                                assert.ifError(err);
+
+                                pettyCache.semaphore.acquire(key, function(err) {
+                                    assert(err);
+                                    done();
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
+        it('should ensure at least one slot is not consumed', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquire(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquire(key, function(err, index) {
+                        assert.ifError(err);
+                        assert.equal(index, 1);
+
+                        pettyCache.semaphore.acquire(key, function(err) {
+                            assert(err);
+
+                            pettyCache.semaphore.consume(key, 0, function(err) {
+                                assert.ifError(err);
+
+                                pettyCache.semaphore.consume(key, 1, function(err) {
+                                    assert.ifError(err);
+
+                                    pettyCache.semaphore.acquire(key, function(err) {
+                                        assert.ifError(err);
+                                        assert.equal(index, 1);
+                                        done();
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+
+    describe('PettyCache.semaphore.release', function() {
+        it('should release a slot', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquire(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquire(key, function(err) {
+                        assert(err);
+
+                        pettyCache.semaphore.release(key, 0, function(err) {
+                            assert.ifError(err);
+
+                            pettyCache.semaphore.acquire(key, function(err, index) {
+                                assert.ifError(err);
+                                assert.equal(index, 0);
+                                done();
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+
+    describe('PettyCache.semaphore.retrieveOrCreate', function() {
+        it('should create a new semaphore', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 100 }, function(err, semaphore) {
+                assert.ifError(err);
+                assert(semaphore);
+                assert.equal(semaphore.length, 100);
+                assert(semaphore.every(s => s.status === 'available'));
+
+                pettyCache.semaphore.retrieveOrCreate(key, function(err, semaphore) {
+                    assert.ifError(err);
+                    assert(semaphore);
+                    assert.equal(semaphore.length, 100);
+                    assert(semaphore.every(s => s.status === 'available'));
+                    done();
+                });
+            });
+        });
+    });
+});
+
 describe('PettyCache.set', function() {
     it('PettyCache.set should set a value', function(done) {
         this.timeout(7000);
