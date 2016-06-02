@@ -426,6 +426,35 @@ describe('PettyCache.semaphore', function() {
         });
     });
 
+    describe('PettyCache.semaphore.release', function() {
+        it('should release a slot', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquire(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquire(key, function(err) {
+                        assert(err);
+
+                        pettyCache.semaphore.release(key, 0, function(err) {
+                            assert.ifError(err);
+
+                            pettyCache.semaphore.acquire(key, function(err, index) {
+                                assert.ifError(err);
+                                assert.equal(index, 0);
+                                done();
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+
     describe('PettyCache.semaphore.retrieveOrCreate', function() {
         it('should create a new semaphore', function(done) {
             var key = Math.random().toString();
