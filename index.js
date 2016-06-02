@@ -212,7 +212,7 @@ PettyCache.prototype.mutex = {
         options = options || {};
 
         options.retry = options.hasOwnProperty('retry') ? options.retry : {};
-        options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 1000;
+        options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 200;
         options.retry.times = options.retry.hasOwnProperty('times') ? options.retry.times : 1;
         options.ttl = options.hasOwnProperty('ttl') ? options.ttl : 1000;
 
@@ -278,7 +278,7 @@ PettyCache.prototype.semaphore = {
         options = options || {};
 
         options.retry = options.hasOwnProperty('retry') ? options.retry : {};
-        options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 1000;
+        options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 200;
         options.retry.times = options.retry.hasOwnProperty('times') ? options.retry.times : 1;
         options.ttl = options.hasOwnProperty('ttl') ? options.ttl : 1000;
 
@@ -286,7 +286,7 @@ PettyCache.prototype.semaphore = {
 
         async.retry({ interval: options.retry.interval, times: options.retry.times }, function(callback) {
             // Mutex lock around semaphore
-            _this.mutex.lock(`lock:${key}`, { retry: { interval: 100, retry: 10 } }, function(err) {
+            _this.mutex.lock(`lock:${key}`, { retry: { times: 25 } }, function(err) {
                 if (err) {
                     return callback(err);
                 }
@@ -335,7 +335,7 @@ PettyCache.prototype.semaphore = {
         const _this = this;
 
         // Mutex lock around semaphore
-        _this.mutex.lock(`lock:${key}`, { retry: { interval: 100, retry: 10 } }, function(err) {
+        _this.mutex.lock(`lock:${key}`, { retry: { times: 25 } }, function(err) {
             if (err) {
                 return callback(err);
             }
@@ -381,7 +381,7 @@ PettyCache.prototype.semaphore = {
         const _this = this;
 
         // Mutex lock around semaphore
-        _this.mutex.lock(`lock:${key}`, { retry: { interval: 100, retry: 10 } }, function(err) {
+        _this.mutex.lock(`lock:${key}`, { retry: { times: 25 } }, function(err) {
             if (err) {
                 return callback(err);
             }
@@ -429,7 +429,7 @@ PettyCache.prototype.semaphore = {
         const _this = this;
 
         // Mutex lock around semaphore retrival or creation
-        this.mutex.lock(`lock:${key}`, { retry: { interval: 100, retry: 10 } }, function(err) {
+        this.mutex.lock(`lock:${key}`, { retry: { times: 25 } }, function(err) {
             if (err) {
                 return callback(err);
             }

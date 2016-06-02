@@ -1,7 +1,9 @@
 petty-cache
 ===========
 
-A cache module for node.js that uses a two-level cache (in-memory cache for recently accessed data plus Redis for distributed caching) with some extra features to avoid cache stampedes and thundering herds.
+A cache module for Node.js that uses a two-level cache (in-memory cache for recently accessed data plus Redis for distributed caching) with some extra features to avoid cache stampedes and thundering herds.
+
+Also includes mutex and semaphore distributed locking primitives.
 
 ##Features
 
@@ -13,6 +15,12 @@ By default, cache values expire from Redis at a random time between 30 and 60 se
 
 **Double-checked locking**
 Functions executed on cache misses are wrapped in double-checked locking (http://en.wikipedia.org/wiki/Double-checked_locking). This ensures the function called on cache miss will only be executed once in order to prevent cache stampedes (http://en.wikipedia.org/wiki/Cache_stampede).
+
+**Mutex**
+Provides a distributed lock (mutex) with the ability to retry a specified number of times after a specified interval of time when acquiring a lock.
+
+**Semaphore**
+Provides a pool of distributed locks with the ability to release a slot back to the pool or remove the slot from the pool so that it's not used again.
 
 ## Getting Started
 
@@ -37,7 +45,7 @@ pettyCache.fetch('key', function(callback) {
 
 Creates a new petty-cache client. `port`, `host`, and `options` are passed directly to [redis.createClient()](https://www.npmjs.org/package/redis#redis-createclient-).
 
-###PettyCache#bulkFetch(keys, cacheMissFunction, [options,] callback)
+###pettyCache.bulkFetch(keys, cacheMissFunction, [options,] callback)
 
 Attempts to retrieve the values of the keys specified in the `keys` array. Any keys that aren't found are passed to cacheMissFunction as an array along with a callback that takes an error and an object, expecting the keys of the object to be the keys passed to `cacheMissFunction` and the values to be the values that should be stored in cache for the corresponding key.  Either way, the resulting error or key-value hash of all requested keys is passed to `callback`.
 
@@ -47,7 +55,7 @@ Attempts to retrieve the values of the keys specified in the `keys` array. Any k
 // Let's assume a and b are already cached as 1 and 2
 pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
     var results = {};
-    
+
     keys.forEach(function(key) {
         results[key] = key.toUpperCase();
     }
@@ -64,7 +72,7 @@ pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
 }
 ```
 
-###PettyCache#fetch(key, cacheMissFunction, [options,] callback)
+###pettyCache.fetch(key, cacheMissFunction, [options,] callback)
 
 Attempts to retrieve the value from cache at the specified key. If it doesn't exist, it executes the specified cacheMissFunction that takes two parameters: an error and a value.  `cacheMissFunction` should retrieve the expected value for the key from another source and pass it to the given callback. Either way, the resulting error or value is passed to `callback`.
 
@@ -88,9 +96,9 @@ pettyCache.fetch('key', function(callback) {
 }
 ```
 
-###PettyCache#get(key, callback)
+###pettyCache.get(key, callback)
 
-Attempts to retrieve the value from cache at the specified key. Retuns `null` if the key doesn't exist.
+Attempts to retrieve the value from cache at the specified key. Returns `null` if the key doesn't exist.
 
 **Example**
 
@@ -101,27 +109,7 @@ pettyCache.get('key', function(err, value) {
 });
 ```
 
-###PettyCache#lock(key, [options,] callback)
-
-A simple distributed lock. The callback is only called if another entity has not acquired a lock on `key`.  Subsequent attempts to acquire the lock are not made; if you need to retry, you must implement that yourself.
-
-**Example**
-
-```javascript
-pettyCache.lock('resource', function() {
-    console.log('did a thing'); // If multiple processes run simultaneously, only one should print 'did a thing'
-});
-```
-
-**Options**
-
-```javascript
-{
-    expire: 2000 // How long it should take for the lock acquisition to expire in milliseconds. Defaults to 1000.
-}
-```
-
-###PettyCache#patch(key, value, [options,] callback)
+###pettyCache.patch(key, value, [options,] callback)
 
 Updates an object at the given key with the property values provided. Sends an error to the callback if the key does not exist.
 
@@ -145,7 +133,7 @@ pettyCache.patch('key', { a: 1 }, function(callback) {
 }
 ```
 
-###PettyCache#set(key, value, [options,] callback)
+###pettyCache.set(key, value, [options,] callback)
 
 Unconditionally sets a value for a given key.
 
@@ -167,12 +155,43 @@ pettyCache.set('key', { a: 'b' }, function(err) {
 }
 ```
 
-##License
+## Mutex
 
-Copyright 2014 A Mediocre Corporation
+###pettyCache.mutex.lock(key, [options, [callback]])
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
+Attempts to acquire a distributed lock for the specified key. Optionally retries a specified number of times by waiting a specified amount of time between attempts.
 
-http://www.apache.org/licenses/LICENSE-2.0
+```javascript
+pettyCache.mutex.lock('key', { retry: { interval: 200, times: 3 }, ttl: 1000 }, function(err) {
+    if (err) {
+        // We weren't able to acquire the lock (even after trying 3 times every 200 milliseconds).
+    }
 
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions and limitations under the License.
+    // We were able to acquire the lock. Do work and then unlock.
+    pettyCache.mutex.unlock('key');
+});
+```
+
+**Options**
+
+```javascript
+{
+    retry: {
+        interval: 200, // The time in milliseconds between attempts to acquire the lock
+        times: 1 // The number of attempts to acquire the lock
+    },
+    ttl: 1000 // The maximum amount of time to keep the lock locked before automatically being unlocked
+}
+```
+
+###pettyCache.mutex.unlock(key, [callback])
+
+Releases the distributed lock for the specified key.
+
+```javascript
+pettyCache.mutex.lock('key', function(err) {
+    if (err) {
+        // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error
+    }
+});
+```
