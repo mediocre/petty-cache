@@ -329,6 +329,47 @@ PettyCache.prototype.semaphore = {
             });
         }, callback);
     },
+    consume: function(key, index, callback) {
+        callback = callback || function() {};
+
+        const _this = this;
+
+        // Mutex lock around semaphore
+        _this.mutex.lock(`lock:${key}`, { retry: { interval: 100, retry: 10 } }, function(err) {
+            if (err) {
+                return callback(err);
+            }
+
+            _this.redisClient.get(key, function(err, data) {
+                // If we encountered an error, unlock the mutext lock and return error
+                if (err) {
+                    return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
+                }
+
+                // If we don't have a previously created semaphore, unlock the mutext lock and return error
+                if (!data) {
+                    return _this.mutex.unlock(`lock:${key}`, () => { callback(new Error(`Semaphore ${key} doesn't exist.`)); });
+                }
+
+                var pool = JSON.parse(data);
+
+                // Ensure index exists.
+                if (pool.length <= index) {
+                    return _this.mutex.unlock(`lock:${key}`, () => { callback(new Error(`Index ${index} for semaphore ${key} is invalid.`)); });
+                }
+
+                pool[index] = { status: 'consumed' };
+
+                _this.redisClient.set(key, JSON.stringify(pool), function(err) {
+                    if (err) {
+                        return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
+                    }
+
+                    _this.mutex.unlock(`lock:${key}`, () => { callback(); });
+                });
+            });
+        });
+    },
     release: function(key, index, callback) {
         callback = callback || function() {};
 
