@@ -457,6 +457,42 @@ describe('PettyCache.semaphore', function() {
                 });
             });
         });
+
+        it('should ensure at least one slot is not consumed', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquire(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquire(key, function(err, index) {
+                        assert.ifError(err);
+                        assert.equal(index, 1);
+
+                        pettyCache.semaphore.acquire(key, function(err) {
+                            assert(err);
+
+                            pettyCache.semaphore.consume(key, 0, function(err) {
+                                assert.ifError(err);
+
+                                pettyCache.semaphore.consume(key, 1, function(err) {
+                                    assert.ifError(err);
+
+                                    pettyCache.semaphore.acquire(key, function(err) {
+                                        assert.ifError(err);
+                                        assert.equal(index, 1);
+                                        done();
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
     });
 
     describe('PettyCache.semaphore.release', function() {

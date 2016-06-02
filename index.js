@@ -360,6 +360,11 @@ PettyCache.prototype.semaphore = {
 
                 pool[index] = { status: 'consumed' };
 
+                // Ensure at least one slot isn't consumed
+                if (pool.every(s => s.status === 'consumed')) {
+                    pool[index] = { status: 'available' };
+                }
+
                 _this.redisClient.set(key, JSON.stringify(pool), function(err) {
                     if (err) {
                         return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
