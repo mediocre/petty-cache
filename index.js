@@ -212,7 +212,7 @@ PettyCache.prototype.mutex = {
         options = options || {};
 
         options.retry = options.hasOwnProperty('retry') ? options.retry : {};
-        options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 200;
+        options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 100;
         options.retry.times = options.retry.hasOwnProperty('times') ? options.retry.times : 1;
         options.ttl = options.hasOwnProperty('ttl') ? options.ttl : 1000;
 
@@ -268,7 +268,7 @@ PettyCache.prototype.patch = function(key, value, options, callback) {
 };
 
 PettyCache.prototype.semaphore = {
-    acquire: function(key, options, callback) {
+    acquireLock: function(key, options, callback) {
         // Options are optional
         if (!callback && typeof options === 'function') {
             callback = options;
@@ -278,7 +278,7 @@ PettyCache.prototype.semaphore = {
         options = options || {};
 
         options.retry = options.hasOwnProperty('retry') ? options.retry : {};
-        options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 200;
+        options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 100;
         options.retry.times = options.retry.hasOwnProperty('times') ? options.retry.times : 1;
         options.ttl = options.hasOwnProperty('ttl') ? options.ttl : 1000;
 
@@ -329,7 +329,7 @@ PettyCache.prototype.semaphore = {
             });
         }, callback);
     },
-    consume: function(key, index, callback) {
+    consumeLock: function(key, index, callback) {
         callback = callback || function() {};
 
         const _this = this;
@@ -375,7 +375,7 @@ PettyCache.prototype.semaphore = {
             });
         });
     },
-    release: function(key, index, callback) {
+    releaseLock: function(key, index, callback) {
         callback = callback || function() {};
 
         const _this = this;
@@ -416,6 +416,42 @@ PettyCache.prototype.semaphore = {
             });
         });
     },
+    reset: function(key, callback) {
+        callback = callback || function() {};
+
+        const _this = this;
+
+        // Mutex lock around semaphore
+        this.mutex.lock(`lock:${key}`, { retry: { times: 25 } }, function(err) {
+            if (err) {
+                return callback(err);
+            }
+
+            // Try to get previously created semaphore
+            _this.redisClient.get(key, function(err, data) {
+                // If we encountered an error, unlock the mutext lock and return error
+                if (err) {
+                    return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
+                }
+
+                // If we don't have a previously created semaphore, unlock the mutext lock and return error
+                if (!data) {
+                    return _this.mutex.unlock(`lock:${key}`, () => { callback(new Error(`Semaphore ${key} doesn't exist.`)); });
+                }
+
+                var pool = JSON.parse(data);
+                pool = Array(pool.length).fill({ status: 'available' });
+
+                _this.redisClient.set(key, JSON.stringify(pool), function(err) {
+                    if (err) {
+                        return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
+                    }
+
+                    _this.mutex.unlock(`lock:${key}`, () => { callback(null, pool); });
+                });
+            });
+        });
+    },
     retrieveOrCreate: function(key, options, callback) {
         // Options are optional
         if (!callback && typeof options === 'function') {
@@ -441,7 +477,7 @@ PettyCache.prototype.semaphore = {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
                 }
 
-                // If we retreived a previously created semaphore, unlock the mutext lock and return error
+                // If we retreived a previously created semaphore, unlock the mutext lock and return
                 if (data) {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(null, JSON.parse(data)); });
                 }

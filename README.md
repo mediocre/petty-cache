@@ -162,9 +162,9 @@ pettyCache.set('key', { a: 'b' }, function(err) {
 Attempts to acquire a distributed lock for the specified key. Optionally retries a specified number of times by waiting a specified amount of time between attempts.
 
 ```javascript
-pettyCache.mutex.lock('key', { retry: { interval: 200, times: 3 }, ttl: 1000 }, function(err) {
+pettyCache.mutex.lock('key', { retry: { interval: 100, times: 5 }, ttl: 1000 }, function(err) {
     if (err) {
-        // We weren't able to acquire the lock (even after trying 3 times every 200 milliseconds).
+        // We weren't able to acquire the lock (even after trying 5 times every 100 milliseconds).
     }
 
     // We were able to acquire the lock. Do work and then unlock.
@@ -177,7 +177,7 @@ pettyCache.mutex.lock('key', { retry: { interval: 200, times: 3 }, ttl: 1000 }, 
 ```javascript
 {
     retry: {
-        interval: 200, // The time in milliseconds between attempts to acquire the lock.
+        interval: 100, // The time in milliseconds between attempts to acquire the lock.
         times: 1 // The number of attempts to acquire the lock.
     },
     ttl: 1000 // The maximum amount of time to keep the lock locked before automatically being unlocked.
@@ -198,7 +198,7 @@ pettyCache.mutex.lock('key', function(err) {
 
 ## Semaphore
 
-Provides a pool of distributed locks. Once a consumer acquires a lock they have the ability to release the lock back to the pool or remove the lock from the pool so that it's not used again.
+Provides a pool of distributed locks. Once a consumer acquires a lock they have the ability to release the lock back to the pool or mark the lock as "consumed" so that it's not used again.
 
 **Example**
 
@@ -210,20 +210,20 @@ pettyCache.semaphore.retrieveOrCreate('key', { size: 10 }, function(err) {
     }
 
     // Acquire a lock from the semaphore's pool
-    pettyCache.semaphore.acquire('key', { retry: { interval: 200, times: 3 }, ttl: 1000 }, function(err, index) {
+    pettyCache.semaphore.acquireLock('key', { retry: { interval: 100, times: 5 }, ttl: 1000 }, function(err, index) {
         if (err) {
-            // We couldn't acquire a lock from the semaphore's pool (even after trying 3 times every 200 milliseconds).
+            // We couldn't acquire a lock from the semaphore's pool (even after trying 5 times every 100 milliseconds).
         }
 
         // We were able to acquire a lock from the semaphore's pool. Do work and then release the lock.
-        pettyCache.semaphore.release('key', index, function(err) {
+        pettyCache.semaphore.releaseLock('key', index, function(err) {
             if (err) {
                 // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error.
             }
         });
 
         // Or, rather than releasing the lock back to the semaphore's pool you can mark the lock as "consumed" to prevent it from being used again.
-        pettyCache.semaphore.consume('key', index, function(err) {
+        pettyCache.semaphore.consumeLock('key', index, function(err) {
             if (err) {
                 // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error.
             }
@@ -232,15 +232,15 @@ pettyCache.semaphore.retrieveOrCreate('key', { size: 10 }, function(err) {
 });
 ```
 
-###pettyCache.semaphore.acquire(key, [options, [callback]])
+###pettyCache.semaphore.acquireLock(key, [options, [callback]])
 
 Attempts to acquire a lock from the semaphore's pool. Optionally retries a specified number of times by waiting a specified amount of time between attempts.
 
 ```javascript
 // Acquire a lock from the semaphore's pool
-pettyCache.semaphore.acquire('key', { retry: { interval: 200, times: 3 }, ttl: 1000 }, function(err, index) {
+pettyCache.semaphore.acquireLock('key', { retry: { interval: 100, times: 5 }, ttl: 1000 }, function(err, index) {
     if (err) {
-        // We couldn't acquire a lock from the semaphore's pool (even after trying 3 times every 200 milliseconds).
+        // We couldn't acquire a lock from the semaphore's pool (even after trying 5 times every 100 milliseconds).
     }
 
     // We were able to acquire a lock from the semaphore's pool. Do work and then release the lock.
@@ -252,33 +252,45 @@ pettyCache.semaphore.acquire('key', { retry: { interval: 200, times: 3 }, ttl: 1
 ```javascript
 {
     retry: {
-        interval: 200, // The time in milliseconds between attempts to acquire the lock.
+        interval: 100, // The time in milliseconds between attempts to acquire the lock.
         times: 1 // The number of attempts to acquire the lock.
     },
     ttl: 1000 // The maximum amount of time to keep the lock locked before automatically being unlocked.
 }
 ```
 
-###pettyCache.semaphore.consume(key, index, [callback])
+###pettyCache.semaphore.consumeLock(key, index, [callback])
 
 Mark the lock at the specified index as "consumed" to prevent it from being used again.
 
 ```javascript
-pettyCache.mutex.consume('key', index, function(err) {
+pettyCache.semaphore.consumeLock('key', index, function(err) {
     if (err) {
         // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error.
     }
 });
 ```
 
-###pettyCache.semaphore.release(key, index, [callback])
+###pettyCache.semaphore.releaseLock(key, index, [callback])
 
 Releases the lock at the specified index back to the semaphore's pool so that it can be used again.
 
 ```javascript
-pettyCache.mutex.release('key', index, function(err) {
+pettyCache.semaphore.releaseLock('key', index, function(err) {
     if (err) {
         // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error.
+    }
+});
+```
+
+###pettyCache.semaphore.reset(key, [callback])
+
+Resets the semaphore to its initial state effectively releasing all locks (even those that have been marked as "consumed").
+
+```javascript
+pettyCache.semaphore.reset('key', function(err) {
+    if (err) {
+        // We weren't able to reset the semaphore.
     }
 });
 ```
