@@ -295,16 +295,6 @@ pettyCache.semaphore.reset('key', function(err) {
 });
 ```
 
-Releases the lock at the specified index back to the semaphore's pool so that it can be used again.
-
-```javascript
-pettyCache.semaphore.releaseLock('key', index, function(err) {
-    if (err) {
-        // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error.
-    }
-});
-```
-
 ###pettyCache.semaphore.retrieveOrCreate(key, [options, [callback]])
 
 Retrieves a previously created semaphore or creates a new semaphore with the optionally specified number of locks in its pool.
