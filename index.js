@@ -446,7 +446,7 @@ PettyCache.prototype.semaphore = {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(null, JSON.parse(data)); });
                 }
 
-                options.size = options.hasOwnProperty('size') ? options.size : 1;
+                options.size = options.hasOwnProperty('size') ? Math.max(options.size, 1) : 1;
 
                 var pool = Array(options.size).fill({ status: 'available' });
 
