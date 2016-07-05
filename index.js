@@ -375,6 +375,49 @@ PettyCache.prototype.semaphore = {
             });
         });
     },
+    expand: function(key, size, callback) {
+        callback = callback || function() {};
+
+        const _this = this;
+
+        _this.mutex.lock(`lock:${key}`, { retry: { times: 25 } }, function(err) {
+            if (err) {
+                return callback(err);
+            }
+
+            _this.redisClient.get(key, function(err, data) {
+                // If we encountered an error, unlock the mutext lock and return error
+                if (err) {
+                    return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
+                }
+
+                // If we don't have a previously created semaphore, unlock the mutext lock and return error
+                if (!data) {
+                    return _this.mutex.unlock(`lock:${key}`, () => { callback(new Error(`Semaphore ${key} doesn't exist.`)); });
+                }
+
+                var pool = JSON.parse(data);
+
+                if (pool.length > size) {
+                    return _this.mutex.unlock(`lock:${key}`, () => { callback(new Error(`Cannot shrink pool, size is ${pool.length} and you requested a size of ${size}.`)); });
+                }
+
+                if (pool.length === size) {
+                    return _this.mutex.unlock(`lock:${key}`, () => callback());
+                }
+
+                pool = pool.concat(Array(size - pool.length).fill({ status: 'available' }));
+
+                _this.redisClient.set(key, JSON.stringify(pool), function(err) {
+                    if (err) {
+                        return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
+                    }
+
+                    _this.mutex.unlock(`lock:${key}`, () => { callback(); });
+                });
+            });
+        });
+    },
     releaseLock: function(key, index, callback) {
         callback = callback || function() {};
 
