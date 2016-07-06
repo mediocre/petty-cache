@@ -495,6 +495,41 @@ describe('PettyCache.semaphore', function() {
         });
     });
 
+    describe('PettyCache.semaphore.expand', function() {
+        it('should increase the size of a semaphore pool', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err, pool) {
+                assert.ifError(err);
+                assert.strictEqual(pool.length, 2);
+
+                pettyCache.semaphore.expand(key, 3, function(err) {
+                    assert.ifError(err);
+                    pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err, pool) {
+                        assert.ifError(err);
+                        assert.strictEqual(pool.length, 3);
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('should refuse to shrink a pool', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err, pool) {
+                assert.ifError(err);
+                assert.strictEqual(pool.length, 2);
+
+                pettyCache.semaphore.expand(key, 1, function(err) {
+                    assert(err);
+                    assert.strictEqual(err.message, 'Cannot shrink pool, size is 2 and you requested a size of 1.');
+                    done();
+                });
+            });
+        });
+    });
+
     describe('PettyCache.semaphore.releaseLock', function() {
         it('should release a lock', function(done) {
             var key = Math.random().toString();
