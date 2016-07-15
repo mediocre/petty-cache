@@ -286,7 +286,7 @@ PettyCache.prototype.semaphore = {
 
         async.retry({ interval: options.retry.interval, times: options.retry.times }, function(callback) {
             // Mutex lock around semaphore
-            _this.mutex.lock(`lock:${key}`, { retry: { times: 25 } }, function(err) {
+            _this.mutex.lock(`lock:${key}`, { retry: { times: 100 } }, function(err) {
                 if (err) {
                     return callback(err);
                 }
@@ -335,7 +335,7 @@ PettyCache.prototype.semaphore = {
         const _this = this;
 
         // Mutex lock around semaphore
-        _this.mutex.lock(`lock:${key}`, { retry: { times: 25 } }, function(err) {
+        _this.mutex.lock(`lock:${key}`, { retry: { times: 100 } }, function(err) {
             if (err) {
                 return callback(err);
             }
@@ -380,7 +380,7 @@ PettyCache.prototype.semaphore = {
 
         const _this = this;
 
-        _this.mutex.lock(`lock:${key}`, { retry: { times: 25 } }, function(err) {
+        _this.mutex.lock(`lock:${key}`, { retry: { times: 100 } }, function(err) {
             if (err) {
                 return callback(err);
             }
@@ -424,7 +424,7 @@ PettyCache.prototype.semaphore = {
         const _this = this;
 
         // Mutex lock around semaphore
-        _this.mutex.lock(`lock:${key}`, { retry: { times: 25 } }, function(err) {
+        _this.mutex.lock(`lock:${key}`, { retry: { times: 100 } }, function(err) {
             if (err) {
                 return callback(err);
             }
@@ -465,7 +465,7 @@ PettyCache.prototype.semaphore = {
         const _this = this;
 
         // Mutex lock around semaphore
-        this.mutex.lock(`lock:${key}`, { retry: { times: 25 } }, function(err) {
+        this.mutex.lock(`lock:${key}`, { retry: { times: 100 } }, function(err) {
             if (err) {
                 return callback(err);
             }
@@ -508,7 +508,7 @@ PettyCache.prototype.semaphore = {
         const _this = this;
 
         // Mutex lock around semaphore retrival or creation
-        this.mutex.lock(`lock:${key}`, { retry: { times: 25 } }, function(err) {
+        this.mutex.lock(`lock:${key}`, { retry: { times: 100 } }, function(err) {
             if (err) {
                 return callback(err);
             }
