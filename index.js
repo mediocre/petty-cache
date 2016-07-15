@@ -292,12 +292,12 @@ PettyCache.prototype.semaphore = {
                 }
 
                 _this.redisClient.get(key, function(err, data) {
-                    // If we encountered an error, unlock the mutext lock and return error
+                    // If we encountered an error, unlock the mutex lock and return error
                     if (err) {
                         return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
                     }
 
-                    // If we don't have a previously created semaphore, unlock the mutext lock and return error
+                    // If we don't have a previously created semaphore, unlock the mutex lock and return error
                     if (!data) {
                         return _this.mutex.unlock(`lock:${key}`, () => { callback(new Error(`Semaphore ${key} doesn't exist.`)); });
                     }
@@ -311,7 +311,7 @@ PettyCache.prototype.semaphore = {
                         index = pool.findIndex(s => s.ttl <= Date.now());
                     }
 
-                    // If we don't have a previously created semaphore, unlock the mutext lock and return error
+                    // If we don't have a previously created semaphore, unlock the mutex lock and return error
                     if (index === -1) {
                         return _this.mutex.unlock(`lock:${key}`, () => { callback(new Error(`Semaphore ${key} doesn't have any available slots.`)); });
                     }
@@ -341,12 +341,12 @@ PettyCache.prototype.semaphore = {
             }
 
             _this.redisClient.get(key, function(err, data) {
-                // If we encountered an error, unlock the mutext lock and return error
+                // If we encountered an error, unlock the mutex lock and return error
                 if (err) {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
                 }
 
-                // If we don't have a previously created semaphore, unlock the mutext lock and return error
+                // If we don't have a previously created semaphore, unlock the mutex lock and return error
                 if (!data) {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(new Error(`Semaphore ${key} doesn't exist.`)); });
                 }
@@ -386,12 +386,12 @@ PettyCache.prototype.semaphore = {
             }
 
             _this.redisClient.get(key, function(err, data) {
-                // If we encountered an error, unlock the mutext lock and return error
+                // If we encountered an error, unlock the mutex lock and return error
                 if (err) {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
                 }
 
-                // If we don't have a previously created semaphore, unlock the mutext lock and return error
+                // If we don't have a previously created semaphore, unlock the mutex lock and return error
                 if (!data) {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(new Error(`Semaphore ${key} doesn't exist.`)); });
                 }
@@ -430,12 +430,12 @@ PettyCache.prototype.semaphore = {
             }
 
             _this.redisClient.get(key, function(err, data) {
-                // If we encountered an error, unlock the mutext lock and return error
+                // If we encountered an error, unlock the mutex lock and return error
                 if (err) {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
                 }
 
-                // If we don't have a previously created semaphore, unlock the mutext lock and return error
+                // If we don't have a previously created semaphore, unlock the mutex lock and return error
                 if (!data) {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(new Error(`Semaphore ${key} doesn't exist.`)); });
                 }
@@ -472,12 +472,12 @@ PettyCache.prototype.semaphore = {
 
             // Try to get previously created semaphore
             _this.redisClient.get(key, function(err, data) {
-                // If we encountered an error, unlock the mutext lock and return error
+                // If we encountered an error, unlock the mutex lock and return error
                 if (err) {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
                 }
 
-                // If we don't have a previously created semaphore, unlock the mutext lock and return error
+                // If we don't have a previously created semaphore, unlock the mutex lock and return error
                 if (!data) {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(new Error(`Semaphore ${key} doesn't exist.`)); });
                 }
@@ -515,12 +515,12 @@ PettyCache.prototype.semaphore = {
 
             // Try to get previously created semaphore
             _this.redisClient.get(key, function(err, data) {
-                // If we encountered an error, unlock the mutext lock and return error
+                // If we encountered an error, unlock the mutex lock and return error
                 if (err) {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
                 }
 
-                // If we retreived a previously created semaphore, unlock the mutext lock and return
+                // If we retreived a previously created semaphore, unlock the mutex lock and return
                 if (data) {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(null, JSON.parse(data)); });
                 }
