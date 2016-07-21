@@ -525,16 +525,29 @@ PettyCache.prototype.semaphore = {
                     return _this.mutex.unlock(`lock:${key}`, () => { callback(null, JSON.parse(data)); });
                 }
 
-                options.size = options.hasOwnProperty('size') ? Math.max(options.size, 1) : 1;
+                var getSize = function(callback) {
+                    if (typeof options.size === 'function') {
+                        return options.size(callback);
+                    }
 
-                var pool = Array(options.size).fill({ status: 'available' });
+                    callback(null, options.hasOwnProperty('size') ? options.size : 1);
+                };
 
-                _this.redisClient.set(key, JSON.stringify(pool), function(err) {
+                getSize(function(err, size) {
+                    // If we encountered an error, unlock the mutex lock and return error
                     if (err) {
                         return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
                     }
 
-                    _this.mutex.unlock(`lock:${key}`, () => { callback(null, pool); });
+                    var pool = Array(Math.max(size, 1)).fill({ status: 'available' });
+
+                    _this.redisClient.set(key, JSON.stringify(pool), function(err) {
+                        if (err) {
+                            return _this.mutex.unlock(`lock:${key}`, () => { callback(err); });
+                        }
+
+                        _this.mutex.unlock(`lock:${key}`, () => { callback(null, pool); });
+                    });
                 });
             });
         });
