@@ -313,6 +313,6 @@ pettyCache.semaphore.retrieveOrCreate('key', { size: 10 }, function(err) {
 
 ```javascript
 {
-    size: 1 // The number of locks to create in the semaphore's pool.
+    size: 1 | function() { var x = 1 + 1; callback(null, x); } // The number of locks to create in the semaphore's pool. Optionally, size can be a `callback(err, size)` function.
 }
 ```

@@ -631,6 +631,25 @@ describe('PettyCache.semaphore', function() {
                 });
             });
         });
+
+        it('should allow options.size to provide a function', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: (callback) => callback(null, 1 + 1) }, function(err, semaphore) {
+                assert.ifError(err);
+                assert(semaphore);
+                assert.equal(semaphore.length, 2);
+                assert(semaphore.every(s => s.status === 'available'));
+
+                pettyCache.semaphore.retrieveOrCreate(key, function(err, semaphore) {
+                    assert.ifError(err);
+                    assert(semaphore);
+                    assert.equal(semaphore.length, 2);
+                    assert(semaphore.every(s => s.status === 'available'));
+                    done();
+                });
+            });
+        });
     });
 });
 
