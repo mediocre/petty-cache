@@ -36,6 +36,42 @@ PettyCache.prototype.bulkFetch = function(keys, func, options, callback) {
         callback = options;
     }
 
+    // If there aren't any keys, return
+    if (!keys.length) {
+        return callback(null, {});
+    }
+
+    var _this = this;
+
+    this.bulkGet(keys, function(err, values) {
+        var missedKeys = Object.keys(values).filter(k => values[k] === undefined);
+
+        // If there aren't any keys missing values, return.
+        if (!missedKeys.length) {
+            return callback(null, values);
+        }
+
+        func(missedKeys, function(err, data) {
+            if (err) {
+                return callback(err);
+            }
+
+            Object.keys(data).forEach(key => values[key] = data[key]);
+
+            _this.bulkSet(data, err => callback(err, values));
+        });
+    });
+};
+
+/**
+ * @param {Array} keys - An array of keys.
+ */
+PettyCache.prototype.bulkGet = function(keys, options, callback) {
+    // Options are optional
+    if (!callback) {
+        callback = options;
+    }
+
     var values = {};
 
     // If there aren't any keys, return
@@ -45,10 +81,11 @@ PettyCache.prototype.bulkFetch = function(keys, func, options, callback) {
 
     // Try to get values from local cache
     for (var i = keys.length - 1; i >= 0; i--) {
-        var value = memoryCache.get(keys[i]);
+        var key = keys[i];
+        var value = memoryCache.get(key);
 
         if (value) {
-            values[keys[i]] = JSON.parse(value);
+            values[key] = JSON.parse(value);
             keys.splice(i, 1);
         }
     }
@@ -58,8 +95,6 @@ PettyCache.prototype.bulkFetch = function(keys, func, options, callback) {
         return callback(null, values);
     }
 
-    var self = this;
-
     // Try to get values from remote cache
     this.redisClient.mget(keys, function(err, data) {
         if (err) {
@@ -67,35 +102,46 @@ PettyCache.prototype.bulkFetch = function(keys, func, options, callback) {
         }
 
         for (var i = keys.length - 1; i >= 0; i--) {
+            var key = keys[i];
             var value = data[i];
 
-            if (value) {
-                values[keys[i]] = JSON.parse(value);
+            if (value !== null) {
+                values[key] = JSON.parse(value);
                 keys.splice(i, 1);
+
+                // Store value in local cache with a short expiration
+                memoryCache.put(key, JSON.stringify(value), random(2000, 5000));
+            } else {
+                values[key] = undefined;
             }
         }
 
-        // If there aren't any keys left, return
-        if (!keys.length) {
-            return callback(null, values);
-        }
+        callback(null, values);
+    });
+};
 
-        func(keys, function(err, data) {
-            if (err) {
-                return callback(err);
-            }
+PettyCache.prototype.bulkSet = function(values, options, callback) {
+    // Options are optional
+    if (!callback) {
+        callback = options;
+        options = {};
+    }
 
-            async.each(Object.keys(data), function(key, callback) {
-                values[key] = data[key];
-                self.set(key, values[key], options, callback);
-            }, function(err) {
-                if (err) {
-                    return callback(err);
-                }
+    // Redis does not have a MSETEX command so we batch commands: http://redis.js.org/#api-clientbatchcommands
+    var batch = this.redisClient.batch();
 
-                callback(null, values);
-            });
-        });
+    Object.keys(values).forEach(key => {
+        var value = values[key];
+
+        // Store value in local cache with a short expiration
+        memoryCache.put(key, JSON.stringify(value), random(2000, 5000));
+
+        // Add Redis command
+        batch.psetex(key, options.expire || random(30000, 60000), JSON.stringify(value));
+    });
+
+    batch.exec(function(err) {
+        callback(err);
     });
 };
 

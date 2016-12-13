@@ -72,9 +72,43 @@ pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
 }
 ```
 
+###pettyCache.bulkGet(keys, callback)
+
+Attempts to retrieve the values of the keys specified in the `keys` array. Returns a key-value hash of all specified keys with either the corresponding values from cache or `undefined` if a key was not found.
+
+**Example**
+
+```javascript
+pettyCache.get(['key1', 'key2', 'key3'], function(err, values) {
+    console.log(values);
+});
+```
+
+###pettyCache.bulkSet(values, [options,] callback)
+
+Unconditionally sets the values for the specified keys.
+
+**Example**
+
+```javascript
+pettyCache.set({ key1: 'one', key2: 2, key3: 'three' }, function(err) {
+    if (err) {
+        // Handle error
+    }
+});
+```
+
+**Options**
+
+```javascript
+{
+    expire: 30000 // How long it should take for the cache entries to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+}
+```
+
 ###pettyCache.fetch(key, cacheMissFunction, [options,] callback)
 
-Attempts to retrieve the value from cache at the specified key. If it doesn't exist, it executes the specified cacheMissFunction that takes two parameters: an error and a value.  `cacheMissFunction` should retrieve the expected value for the key from another source and pass it to the given callback. Either way, the resulting error or value is passed to `callback`.
+Attempts to retrieve the value from cache at the specified key. If it doesn't exist, it executes the specified cacheMissFunction that takes two parameters: an error and a value. `cacheMissFunction` should retrieve the expected value for the key from another source and pass it to the given callback. Either way, the resulting error or value is passed to `callback`.
 
 **Example**
 
