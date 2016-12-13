@@ -11,7 +11,7 @@ describe('PettyCache.bulkFetch', function() {
             pettyCache.set('b', '2', function() {
                 pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
                     assert(keys.length <= 2);
-                    return callback(null, { 'c': [3], 'd': { num: 4 } });
+                    callback(null, { 'c': [3], 'd': { num: 4 } });
                 }, function(err, values) {
                     assert.strictEqual(values.a, 1);
                     assert.strictEqual(values.b, '2');
@@ -30,6 +30,223 @@ describe('PettyCache.bulkFetch', function() {
                             done();
                         });
                     }, 6000);
+                });
+            });
+        });
+    });
+
+    it('PettyCache.bulkFetch should cache null values returned by func', function(done) {
+        this.timeout(7000);
+
+        var key1 = Math.random().toString();
+        var key2 = Math.random().toString();
+
+        pettyCache.bulkFetch([key1, key2], function(keys, callback) {
+            assert.strictEqual(keys.length, 2);
+            assert(keys.some(k => k === key1));
+            assert(keys.some(k => k === key2));
+
+            var values = {};
+
+            values[key1] = '1';
+            values[key2] = null;
+
+            callback(null, values);
+        }, function(err) {
+            assert.ifError(err);
+
+            pettyCache.bulkFetch([key1, key2], function() {
+                throw 'This function should not be called';
+            }, function(err, data) {
+                assert.strictEqual(Object.keys(data).length, 2);
+                assert.strictEqual(data[key1], '1');
+                assert.strictEqual(data[key2], null);
+
+                // Wait for local cache to expire
+                setTimeout(function() {
+                    pettyCache.bulkFetch([key1, key2], function() {
+                        throw 'This function should not be called';
+                    }, function(err, data) {
+                        assert.strictEqual(Object.keys(data).length, 2);
+                        assert.strictEqual(data[key1], '1');
+                        assert.strictEqual(data[key2], null);
+
+                        done();
+                    });
+                }, 6000);
+            });
+        });
+    });
+});
+
+describe('PettyCache.bulkGet', function() {
+    it('PettyCache.bulkGet should return values', function(done) {
+        this.timeout(7000);
+
+        var key1 = Math.random().toString();
+        var key2 = Math.random().toString();
+        var key3 = Math.random().toString();
+
+        pettyCache.set(key1, '1', function() {
+            pettyCache.set(key2, '2', function() {
+                pettyCache.set(key3, '3', function() {
+                    pettyCache.bulkGet([key1, key2, key3], function(err, values) {
+                        assert.equal(Object.keys(values).length, 3);
+                        assert.equal(values[key1], '1');
+                        assert.equal(values[key2], '2');
+                        assert.equal(values[key3], '3');
+
+                        // Call bulkGet again while values are still in memory cache
+                        pettyCache.bulkGet([key1, key2, key3], function(err, values) {
+                            assert.equal(Object.keys(values).length, 3);
+                            assert.equal(values[key1], '1');
+                            assert.equal(values[key2], '2');
+                            assert.equal(values[key3], '3');
+
+                            // Wait for memory cache to expire
+                            setTimeout(function() {
+                                // Ensure keys are still in Redis
+                                pettyCache.bulkGet([key1, key2, key3], function(err, values) {
+                                    assert.equal(Object.keys(values).length, 3);
+                                    assert.equal(values[key1], '1');
+                                    assert.equal(values[key2], '2');
+                                    assert.equal(values[key3], '3');
+                                    done();
+                                });
+                            }, 6000);
+                        });
+                    });
+                });
+            });
+        });
+    });
+
+    it('PettyCache.bulkGet should return undefined for missing keys', function(done) {
+        this.timeout(7000);
+
+        var key1 = Math.random().toString();
+        var key2 = Math.random().toString();
+        var key3 = Math.random().toString();
+
+        pettyCache.set(key1, '1', function() {
+            pettyCache.set(key2, '2', function() {
+                pettyCache.bulkGet([key1, key2, key3], function(err, values) {
+                    assert.equal(Object.keys(values).length, 3);
+                    assert.equal(values[key1], '1');
+                    assert.equal(values[key2], '2');
+                    assert.equal(values[key3], undefined);
+
+                    // Call bulkGet again while values are still in memory cache
+                    pettyCache.bulkGet([key1, key2, key3], function(err, values) {
+                        assert.equal(Object.keys(values).length, 3);
+                        assert.equal(values[key1], '1');
+                        assert.equal(values[key2], '2');
+                        assert.equal(values[key3], undefined);
+
+                        // Wait for memory cache to expire
+                        setTimeout(function() {
+                            // Ensure keys are still in Redis
+                            pettyCache.bulkGet([key1, key2, key3], function(err, values) {
+                                assert.equal(Object.keys(values).length, 3);
+                                assert.equal(values[key1], '1');
+                                assert.equal(values[key2], '2');
+                                assert.equal(values[key3], undefined);
+                                done();
+                            });
+                        }, 6000);
+                    });
+                });
+            });
+        });
+    });
+});
+
+describe('PettyCache.bulkSet', function() {
+    it('PettyCache.bulkSet should set values', function(done) {
+        this.timeout(7000);
+
+        var key1 = Math.random().toString();
+        var key2 = Math.random().toString();
+        var key3 = Math.random().toString();
+        var values = {};
+
+        values[key1] = '1';
+        values[key2] = 2;
+        values[key3] = '3';
+
+        pettyCache.bulkSet(values, function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key1, function(err, value) {
+                assert.strictEqual(value, '1');
+
+                pettyCache.get(key2, function(err, value) {
+                    assert.strictEqual(value, 2);
+
+                    pettyCache.get(key3, function(err, value) {
+                        assert.strictEqual(value, '3');
+
+                        // Wait for local cache to expire
+                        setTimeout(function() {
+                            pettyCache.get(key1, function(err, value) {
+                                assert.strictEqual(value, '1');
+
+                                pettyCache.get(key2, function(err, value) {
+                                    assert.strictEqual(value, 2);
+
+                                    pettyCache.get(key3, function(err, value) {
+                                        assert.strictEqual(value, '3');
+                                        done();
+                                    });
+                                });
+                            });
+                        }, 6000);
+                    });
+                });
+            });
+        });
+    });
+
+    it('PettyCache.bulkSet should set values with the specified expire option', function(done) {
+        this.timeout(7000);
+
+        var key1 = Math.random().toString();
+        var key2 = Math.random().toString();
+        var key3 = Math.random().toString();
+        var values = {};
+
+        values[key1] = '1';
+        values[key2] = 2;
+        values[key3] = '3';
+
+        pettyCache.bulkSet(values, { expire: 6000 }, function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key1, function(err, value) {
+                assert.strictEqual(value, '1');
+
+                pettyCache.get(key2, function(err, value) {
+                    assert.strictEqual(value, 2);
+
+                    pettyCache.get(key3, function(err, value) {
+                        assert.strictEqual(value, '3');
+
+                        // Wait for local cache to expire
+                        setTimeout(function() {
+                            pettyCache.get(key1, function(err, value) {
+                                assert.strictEqual(value, null);
+
+                                pettyCache.get(key2, function(err, value) {
+                                    assert.strictEqual(value, null);
+
+                                    pettyCache.get(key3, function(err, value) {
+                                        assert.strictEqual(value, null);
+                                        done();
+                                    });
+                                });
+                            });
+                        }, 6001);
+                    });
                 });
             });
         });
@@ -55,7 +272,7 @@ describe('PettyCache.fetch', function() {
                     pettyCache.fetch(key, function() {
                         throw 'This function should not be called';
                     }, function(err, data) {
-                        assert.equal(data.foo, 'bar');
+                        assert.strictEqual(data.foo, 'bar');
                         done();
                     });
                 }, 6000);
@@ -74,14 +291,14 @@ describe('PettyCache.fetch', function() {
             pettyCache.fetch(key, function() {
                 throw 'This function should not be called';
             }, function(err, data) {
-                assert.equal(data, null);
+                assert.strictEqual(data, null);
 
                 // Wait for local cache to expire
                 setTimeout(function() {
                     pettyCache.fetch(key, function() {
                         throw 'This function should not be called';
                     }, function(err, data) {
-                        assert.equal(data, null);
+                        assert.strictEqual(data, null);
                         done();
                     });
                 }, 6000);
@@ -100,14 +317,14 @@ describe('PettyCache.fetch', function() {
             pettyCache.fetch(key, function() {
                 throw 'This function should not be called';
             }, function(err, data) {
-                assert.equal(data, null);
+                assert.strictEqual(data, null);
 
                 // Wait for local cache to expire
                 setTimeout(function() {
                     pettyCache.fetch(key, function() {
                         throw 'This function should not be called';
                     }, function(err, data) {
-                        assert.equal(data, null);
+                        assert.strictEqual(data, null);
                         done();
                     });
                 }, 6000);
@@ -167,7 +384,7 @@ describe('PettyCache.fetch', function() {
                         done();
                     });
                 });
-            }, 6000);
+            }, 6001);
         });
     });
 });
