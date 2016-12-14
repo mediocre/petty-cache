@@ -110,7 +110,7 @@ PettyCache.prototype.bulkGet = function(keys, options, callback) {
                 keys.splice(i, 1);
 
                 // Store value in local cache with a short expiration
-                memoryCache.put(key, JSON.stringify(value), random(2000, 5000));
+                memoryCache.put(key, value, random(2000, 5000));
             } else {
                 values[key] = undefined;
             }

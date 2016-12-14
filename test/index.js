@@ -10,7 +10,8 @@ describe('PettyCache.bulkFetch', function() {
         pettyCache.set('a', 1, function() {
             pettyCache.set('b', '2', function() {
                 pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
-                    assert(keys.length <= 2);
+                    assert(keys.length === 2);
+
                     callback(null, { 'c': [3], 'd': { num: 4 } });
                 }, function(err, values) {
                     assert.strictEqual(values.a, 1);
@@ -18,18 +19,39 @@ describe('PettyCache.bulkFetch', function() {
                     assert.strictEqual(values.c[0], 3);
                     assert.strictEqual(values.d.num, 4);
 
-                    // Wait for local cache to expire
-                    setTimeout(function() {
-                        pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function() {
-                            throw 'This function should not be called';
-                        }, function(err, values) {
-                            assert.strictEqual(values.a, 1);
-                            assert.strictEqual(values.b, '2');
-                            assert.strictEqual(values.c[0], 3);
-                            assert.strictEqual(values.d.num, 4);
-                            done();
-                        });
-                    }, 6000);
+                    // Call bulkFetch again to ensure local cache serialization is working as expected.
+                    pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function() {
+                        throw 'This function should not be called';
+                    }, function(err, values) {
+                        assert.strictEqual(values.a, 1);
+                        assert.strictEqual(values.b, '2');
+                        assert.strictEqual(values.c[0], 3);
+                        assert.strictEqual(values.d.num, 4);
+
+                        // Wait for local cache to expire
+                        setTimeout(function() {
+                            pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function() {
+                                throw 'This function should not be called';
+                            }, function(err, values) {
+                                assert.strictEqual(values.a, 1);
+                                assert.strictEqual(values.b, '2');
+                                assert.strictEqual(values.c[0], 3);
+                                assert.strictEqual(values.d.num, 4);
+
+                                // Call bulkFetch again to ensure local cache serialization is working as expected.
+                                pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function() {
+                                    throw 'This function should not be called';
+                                }, function(err, values) {
+                                    assert.strictEqual(values.a, 1);
+                                    assert.strictEqual(values.b, '2');
+                                    assert.strictEqual(values.c[0], 3);
+                                    assert.strictEqual(values.d.num, 4);
+
+                                    done();
+                                });
+                            });
+                        }, 6000);
+                    });
                 });
             });
         });
