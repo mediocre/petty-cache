@@ -275,6 +275,34 @@ describe('PettyCache.bulkSet', function() {
     });
 });
 
+describe('PettyCache.del', function() {
+    it('PettyCache.del', function(done) {
+        var key = Math.random().toString();
+
+        pettyCache.set(key, 'hello world', function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key, function(err, value) {
+                assert.strictEqual(value, 'hello world');
+
+                pettyCache.del(key, function(err) {
+                    assert.ifError(err);
+
+                    pettyCache.get(key, function(err, value) {
+                        assert.ifError(err);
+                        assert.strictEqual(value, null);
+
+                        pettyCache.del(key, function(err) {
+                            assert.ifError(err);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 describe('PettyCache.fetch', function() {
     it('PettyCache.fetch', function(done) {
         this.timeout(7000);

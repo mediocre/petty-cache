@@ -145,6 +145,17 @@ PettyCache.prototype.bulkSet = function(values, options, callback) {
     });
 };
 
+PettyCache.prototype.del = function(key, callback) {
+    this.redisClient.del(key, function(err) {
+        if (err) {
+            return callback(err);
+        }
+
+        memoryCache.del(key);
+        callback();
+    });
+};
+
 // Returns data from cache if available;
 // otherwise executes the specified function and places the results in cache before returning the data.
 PettyCache.prototype.fetch = function(key, func, options, callback) {
