@@ -8,6 +8,8 @@ const redis = require('redis');
 function PettyCache(port, host, options) {
     this.redisClient = redis.createClient(port || 6379, host || '127.0.0.1', options);
 
+    this.redisClient.on('error', err => console.warn(`Warning: Redis reported a client error: ${err}`));
+
     // Mutex functions need to be bound to the main PettyCache object
     for (let method in this.mutex) {
         if (typeof this.mutex[method] === 'function') {
