@@ -7,7 +7,7 @@ A cache module for Node.js that uses a two-level cache (in-memory cache for rece
 
 Also includes mutex and semaphore distributed locking primitives.
 
-##Features
+## Features
 
 **Two-level cache**
 Data is cached for 2 to 5 seconds in memory to reduce the amount of calls to Redis.
@@ -74,7 +74,7 @@ pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
 }
 ```
 
-###pettyCache.bulkGet(keys, callback)
+### pettyCache.bulkGet(keys, callback)
 
 Attempts to retrieve the values of the keys specified in the `keys` array. Returns a key-value hash of all specified keys with either the corresponding values from cache or `undefined` if a key was not found.
 
@@ -86,7 +86,7 @@ pettyCache.get(['key1', 'key2', 'key3'], function(err, values) {
 });
 ```
 
-###pettyCache.bulkSet(values, [options,] callback)
+### pettyCache.bulkSet(values, [options,] callback)
 
 Unconditionally sets the values for the specified keys.
 
@@ -108,7 +108,7 @@ pettyCache.set({ key1: 'one', key2: 2, key3: 'three' }, function(err) {
 }
 ```
 
-###pettyCache.fetch(key, cacheMissFunction, [options,] callback)
+### pettyCache.fetch(key, cacheMissFunction, [options,] callback)
 
 Attempts to retrieve the value from cache at the specified key. If it doesn't exist, it executes the specified cacheMissFunction that takes two parameters: an error and a value. `cacheMissFunction` should retrieve the expected value for the key from another source and pass it to the given callback. Either way, the resulting error or value is passed to `callback`.
 
@@ -132,7 +132,7 @@ pettyCache.fetch('key', function(callback) {
 }
 ```
 
-###pettyCache.get(key, callback)
+### pettyCache.get(key, callback)
 
 Attempts to retrieve the value from cache at the specified key. Returns `null` if the key doesn't exist.
 
@@ -145,7 +145,7 @@ pettyCache.get('key', function(err, value) {
 });
 ```
 
-###pettyCache.patch(key, value, [options,] callback)
+### pettyCache.patch(key, value, [options,] callback)
 
 Updates an object at the given key with the property values provided. Sends an error to the callback if the key does not exist.
 
@@ -169,7 +169,7 @@ pettyCache.patch('key', { a: 1 }, function(callback) {
 }
 ```
 
-###pettyCache.set(key, value, [options,] callback)
+### pettyCache.set(key, value, [options,] callback)
 
 Unconditionally sets a value for a given key.
 
@@ -193,7 +193,7 @@ pettyCache.set('key', { a: 'b' }, function(err) {
 
 ## Mutex
 
-###pettyCache.mutex.lock(key, [options, [callback]])
+### pettyCache.mutex.lock(key, [options, [callback]])
 
 Attempts to acquire a distributed lock for the specified key. Optionally retries a specified number of times by waiting a specified amount of time between attempts.
 
@@ -220,7 +220,7 @@ pettyCache.mutex.lock('key', { retry: { interval: 100, times: 5 }, ttl: 1000 }, 
 }
 ```
 
-###pettyCache.mutex.unlock(key, [callback])
+### pettyCache.mutex.unlock(key, [callback])
 
 Releases the distributed lock for the specified key.
 
@@ -268,7 +268,7 @@ pettyCache.semaphore.retrieveOrCreate('key', { size: 10 }, function(err) {
 });
 ```
 
-###pettyCache.semaphore.acquireLock(key, [options, [callback]])
+### pettyCache.semaphore.acquireLock(key, [options, [callback]])
 
 Attempts to acquire a lock from the semaphore's pool. Optionally retries a specified number of times by waiting a specified amount of time between attempts.
 
@@ -295,7 +295,7 @@ pettyCache.semaphore.acquireLock('key', { retry: { interval: 100, times: 5 }, tt
 }
 ```
 
-###pettyCache.semaphore.consumeLock(key, index, [callback])
+### pettyCache.semaphore.consumeLock(key, index, [callback])
 
 Mark the lock at the specified index as "consumed" to prevent it from being used again.
 
@@ -307,7 +307,7 @@ pettyCache.semaphore.consumeLock('key', index, function(err) {
 });
 ```
 
-###pettyCache.semaphore.releaseLock(key, index, [callback])
+### pettyCache.semaphore.releaseLock(key, index, [callback])
 
 Releases the lock at the specified index back to the semaphore's pool so that it can be used again.
 
@@ -319,7 +319,7 @@ pettyCache.semaphore.releaseLock('key', index, function(err) {
 });
 ```
 
-###pettyCache.semaphore.reset(key, [callback])
+### pettyCache.semaphore.reset(key, [callback])
 
 Resets the semaphore to its initial state effectively releasing all locks (even those that have been marked as "consumed").
 
@@ -331,7 +331,7 @@ pettyCache.semaphore.reset('key', function(err) {
 });
 ```
 
-###pettyCache.semaphore.retrieveOrCreate(key, [options, [callback]])
+### pettyCache.semaphore.retrieveOrCreate(key, [options, [callback]])
 
 Retrieves a previously created semaphore or creates a new semaphore with the optionally specified number of locks in its pool.
 
