@@ -41,13 +41,13 @@ pettyCache.fetch('key', function(callback) {
 });
 ```
 
-##API
+## API
 
-###new PettyCache([port, [host, [options]]])
+### new PettyCache([port, [host, [options]]])
 
 Creates a new petty-cache client. `port`, `host`, and `options` are passed directly to [redis.createClient()](https://www.npmjs.org/package/redis#redis-createclient-).
 
-###pettyCache.bulkFetch(keys, cacheMissFunction, [options,] callback)
+### pettyCache.bulkFetch(keys, cacheMissFunction, [options,] callback)
 
 Attempts to retrieve the values of the keys specified in the `keys` array. Any keys that aren't found are passed to cacheMissFunction as an array along with a callback that takes an error and an object, expecting the keys of the object to be the keys passed to `cacheMissFunction` and the values to be the values that should be stored in cache for the corresponding key.  Either way, the resulting error or key-value hash of all requested keys is passed to `callback`.
 
