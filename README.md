@@ -70,7 +70,7 @@ pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
 
 ```javascript
 {
-    expire: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+    ttl: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
 }
 ```
 
@@ -104,7 +104,7 @@ pettyCache.set({ key1: 'one', key2: 2, key3: 'three' }, function(err) {
 
 ```javascript
 {
-    expire: 30000 // How long it should take for the cache entries to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+    ttl: 30000 // How long it should take for the cache entries to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
 }
 ```
 
@@ -128,7 +128,7 @@ pettyCache.fetch('key', function(callback) {
 
 ```javascript
 {
-    expire: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+    ttl: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
 }
 ```
 
@@ -165,7 +165,7 @@ pettyCache.patch('key', { a: 1 }, function(callback) {
 
 ```javascript
 {
-    expire: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+    ttl: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
 }
 ```
 
@@ -187,7 +187,7 @@ pettyCache.set('key', { a: 'b' }, function(err) {
 
 ```javascript
 {
-    expire: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+    ttl: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
 }
 ```
 
@@ -225,7 +225,7 @@ pettyCache.mutex.lock('key', { retry: { interval: 100, times: 5 }, ttl: 1000 }, 
 Releases the distributed lock for the specified key.
 
 ```javascript
-pettyCache.mutex.lock('key', function(err) {
+pettyCache.mutex.unlock('key', function(err) {
     if (err) {
         // We weren't able to reach Redis. Your lock will expire after its TTL, but you might want to log this error.
     }
