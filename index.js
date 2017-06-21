@@ -1,5 +1,3 @@
-const util = require('util');
-
 const async = require('async');
 const lock = require('lock')();
 const memoryCache = require('memory-cache');
@@ -87,7 +85,7 @@ PettyCache.prototype.bulkGet = function(keys, options, callback) {
         var value = memoryCache.get(key);
 
         if (value) {
-            values[key] = JSON.parse(value);
+            values[key] = value;
             keys.splice(i, 1);
         }
     }
@@ -136,10 +134,10 @@ PettyCache.prototype.bulkSet = function(values, options, callback) {
         var value = values[key];
 
         // Store value in local cache with a short expiration
-        memoryCache.put(key, JSON.stringify(value), random(2000, 5000));
+        memoryCache.put(key, value, random(2000, 5000));
 
         // Add Redis command
-        batch.psetex(key, options.expire || random(30000, 60000), JSON.stringify(value));
+        batch.psetex(key, options.ttl || random(30000, 60000), JSON.stringify(value));
     });
 
     batch.exec(function(err) {
@@ -171,7 +169,7 @@ PettyCache.prototype.fetch = function(key, func, options, callback) {
 
     // Return value from local memory cache if it's not null (or the key exists)
     if (value) {
-        return callback(null, JSON.parse(value));
+        return callback(null, value);
     }
 
     var _this = this;
@@ -193,9 +191,9 @@ PettyCache.prototype.fetch = function(key, func, options, callback) {
             value = memoryCache.get(key);
 
             // Return value from local memory cache if it's not null (or the key exists)
-            if (value) {
+            if (value !== null) {
                 release()();
-                return callback(null, JSON.parse(value));
+                return callback(null, value);
             }
 
             _this.redisClient.get(key, function(err, data) {
@@ -229,35 +227,33 @@ PettyCache.prototype.get = function(key, callback) {
     // Try to get value from local memory cache
     var value = memoryCache.get(key);
 
-    // Return value from local memory cache if it's not null (or the key exists)
-    if (value) {
-        return callback(null, JSON.parse(value));
+    // Return value from local memory cache if it's not null
+    if (value !== null) {
+        return callback(null, value);
     }
+
+    // If the key exists, the value in the memory cache is null
+    if (memoryCache.keys().includes(key)) {
+        return callback(null, null);
+    }
+
+    const _this = this;
 
     this.redisClient.get(key, function(err, data) {
-        if (err || data === null) {
-            return callback(err, data);
+        if (err) {
+            return callback(err);
         }
 
-        memoryCache.put(key, data, random(2000, 5000));
-        callback(null, JSON.parse(data));
+        if (data === null) {
+            return callback(null, null);
+        }
+
+        value = _this.parse(data);
+
+        memoryCache.put(key, value, random(2000, 5000));
+        callback(null, value);
     });
 };
-
-PettyCache.prototype.lock = util.deprecate(function(key, options, callback) {
-    // Options are optional
-    if (!callback && typeof options === 'function') {
-        callback = options;
-    }
-
-    var expire = (options && options.expire) ? options.expire : 1000;
-
-    this.redisClient.set(key, '1', 'NX', 'PX', expire, function(err, res) {
-        if (!err && res === 'OK' && callback) {
-            callback();
-        }
-    });
-}, 'PettyCache.lock is deprecated. Use PettyCache.mutex.lock.');
 
 PettyCache.prototype.mutex = {
     lock: function(key, options, callback) {
@@ -299,6 +295,20 @@ PettyCache.prototype.mutex = {
         callback = callback || function() {};
         this.redisClient.del(key, callback);
     }
+};
+
+PettyCache.prototype.parse = function(text) {
+    return JSON.parse(text, function(k, v) {
+        if (v === '__NaN') {
+            return NaN;
+        } else if (v === '__null') {
+            return null;
+        } else if (v === '__undefined') {
+            return undefined;
+        }
+
+        return v;
+    });
 };
 
 PettyCache.prototype.patch = function(key, value, options, callback) {
@@ -621,14 +631,24 @@ PettyCache.prototype.set = function(key, value, options, callback) {
     }
 
     // Store value in local cache with a short expiration
-    memoryCache.put(key, JSON.stringify(value), random(2000, 5000));
+    memoryCache.put(key, value, random(2000, 5000));
 
-    // Cache undefined as null. Prevents: ERR wrong number of arguments for 'psetex' command
-    if (value === undefined) {
-        value = null;
-    }
+    // Store value is Redis cache
+    this.redisClient.psetex(key, options.ttl || random(30000, 60000), this.stringify(value), callback);
+};
 
-    this.redisClient.psetex(key, options.expire || random(30000, 60000), JSON.stringify(value), callback);
+PettyCache.prototype.stringify = function(value) {
+    return JSON.stringify(value, function(k, v) {
+        if (typeof v === 'number' && isNaN(v)) {
+            return '__NaN';
+        } else if (v === null) {
+            return '__null';
+        } else if (v === undefined) {
+            return '__undefined';
+        }
+
+        return v;
+    });
 };
 
 module.exports = PettyCache;

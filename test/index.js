@@ -1,7 +1,105 @@
-var assert = require('assert');
-var PettyCache = require('../index.js');
+const assert = require('assert');
 
-var pettyCache = new PettyCache();
+const async = require('async');
+const memoryCache = require('memory-cache');
+const redis = require('redis');
+
+const PettyCache = require('../index.js');
+
+const pettyCache = new PettyCache();
+const redisClient = redis.createClient();
+
+describe('memory-cache', function() {
+    it('memoryCache.put(key, \'\')', function(done) {
+        var key = Math.random().toString();
+
+        memoryCache.put(key, '', 1000);
+        assert(memoryCache.keys().includes(key));
+        assert.strictEqual(memoryCache.get(key), '');
+
+        // Wait for memory cache to expire
+        setTimeout(function() {
+            assert(!memoryCache.keys().includes(key));
+            assert.strictEqual(memoryCache.get(key), null);
+            done();
+        }, 1001);
+    });
+
+    it('memoryCache.put(key, 0)', function(done) {
+        var key = Math.random().toString();
+
+        memoryCache.put(key, 0, 1000);
+        assert(memoryCache.keys().includes(key));
+        assert.strictEqual(memoryCache.get(key), 0);
+
+        // Wait for memory cache to expire
+        setTimeout(function() {
+            assert(!memoryCache.keys().includes(key));
+            assert.strictEqual(memoryCache.get(key), null);
+            done();
+        }, 1001);
+    });
+
+    it('memoryCache.put(key, false)', function(done) {
+        var key = Math.random().toString();
+
+        memoryCache.put(key, false, 1000);
+        assert(memoryCache.keys().includes(key));
+        assert.strictEqual(memoryCache.get(key), false);
+
+        // Wait for memory cache to expire
+        setTimeout(function() {
+            assert(!memoryCache.keys().includes(key));
+            assert.strictEqual(memoryCache.get(key), null);
+            done();
+        }, 1001);
+    });
+
+    it('memoryCache.put(key, NaN)', function(done) {
+        var key = Math.random().toString();
+
+        memoryCache.put(key, NaN, 1000);
+        assert(memoryCache.keys().includes(key));
+        assert(isNaN(memoryCache.get(key)));
+
+        // Wait for memory cache to expire
+        setTimeout(function() {
+            assert(!memoryCache.keys().includes(key));
+            assert.strictEqual(memoryCache.get(key), null);
+            done();
+        }, 1001);
+    });
+
+    it('memoryCache.put(key, null)', function(done) {
+        var key = Math.random().toString();
+
+        memoryCache.put(key, null, 1000);
+        assert(memoryCache.keys().includes(key));
+        assert.strictEqual(memoryCache.get(key), null);
+
+        // Wait for memory cache to expire
+        setTimeout(function() {
+            assert(!memoryCache.keys().includes(key));
+            assert.strictEqual(memoryCache.get(key), null);
+            done();
+        }, 1001);
+    });
+
+    it('memoryCache.put(key, undefined)', function(done) {
+        var key = Math.random().toString();
+
+        memoryCache.put(key, undefined, 1000);
+        assert(memoryCache.keys().includes(key));
+        assert.strictEqual(memoryCache.get(key), undefined);
+
+        // Wait for memory cache to expire
+        setTimeout(function() {
+            assert(!memoryCache.keys().includes(key));
+            assert.strictEqual(memoryCache.get(key), null);
+            done();
+        }, 1001);
+    });
+});
 
 describe('PettyCache.bulkFetch', function() {
     it('PettyCache.bulkFetch', function(done) {
@@ -28,7 +126,7 @@ describe('PettyCache.bulkFetch', function() {
                         assert.strictEqual(values.c[0], 3);
                         assert.strictEqual(values.d.num, 4);
 
-                        // Wait for local cache to expire
+                        // Wait for memory cache to expire
                         setTimeout(function() {
                             pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function() {
                                 throw 'This function should not be called';
@@ -84,7 +182,7 @@ describe('PettyCache.bulkFetch', function() {
                 assert.strictEqual(data[key1], '1');
                 assert.strictEqual(data[key2], null);
 
-                // Wait for local cache to expire
+                // Wait for memory cache to expire
                 setTimeout(function() {
                     pettyCache.bulkFetch([key1, key2], function() {
                         throw 'This function should not be called';
@@ -208,7 +306,7 @@ describe('PettyCache.bulkSet', function() {
                     pettyCache.get(key3, function(err, value) {
                         assert.strictEqual(value, '3');
 
-                        // Wait for local cache to expire
+                        // Wait for memore cache to expire
                         setTimeout(function() {
                             pettyCache.get(key1, function(err, value) {
                                 assert.strictEqual(value, '1');
@@ -229,7 +327,7 @@ describe('PettyCache.bulkSet', function() {
         });
     });
 
-    it('PettyCache.bulkSet should set values with the specified expire option', function(done) {
+    it('PettyCache.bulkSet should set values with the specified TTL option', function(done) {
         this.timeout(7000);
 
         var key1 = Math.random().toString();
@@ -241,7 +339,7 @@ describe('PettyCache.bulkSet', function() {
         values[key2] = 2;
         values[key3] = '3';
 
-        pettyCache.bulkSet(values, { expire: 6000 }, function(err) {
+        pettyCache.bulkSet(values, { ttl: 6000 }, function(err) {
             assert.ifError(err);
 
             pettyCache.get(key1, function(err, value) {
@@ -253,7 +351,7 @@ describe('PettyCache.bulkSet', function() {
                     pettyCache.get(key3, function(err, value) {
                         assert.strictEqual(value, '3');
 
-                        // Wait for local cache to expire
+                        // Wait for memory cache to expire
                         setTimeout(function() {
                             pettyCache.get(key1, function(err, value) {
                                 assert.strictEqual(value, null);
@@ -317,7 +415,7 @@ describe('PettyCache.fetch', function() {
             }, function(err, data) {
                 assert.equal(data.foo, 'bar');
 
-                // Wait for local cache to expire
+                // Wait for memory cache to expire
                 setTimeout(function() {
                     pettyCache.fetch(key, function() {
                         throw 'This function should not be called';
@@ -343,7 +441,7 @@ describe('PettyCache.fetch', function() {
             }, function(err, data) {
                 assert.strictEqual(data, null);
 
-                // Wait for local cache to expire
+                // Wait for memory cache to expire
                 setTimeout(function() {
                     pettyCache.fetch(key, function() {
                         throw 'This function should not be called';
@@ -369,7 +467,7 @@ describe('PettyCache.fetch', function() {
             }, function(err, data) {
                 assert.strictEqual(data, null);
 
-                // Wait for local cache to expire
+                // Wait for memory cache to expire
                 setTimeout(function() {
                     pettyCache.fetch(key, function() {
                         throw 'This function should not be called';
@@ -408,7 +506,7 @@ describe('PettyCache.fetch', function() {
         });
     });
 
-    it('PettyCache.fetch should run func again after expire', function(done) {
+    it('PettyCache.fetch should run func again after TTL', function(done) {
         this.timeout(7000);
 
         var key = Math.random().toString();
@@ -420,16 +518,16 @@ describe('PettyCache.fetch', function() {
             }, 100);
         };
 
-        pettyCache.fetch(key, func, { expire: 6000 }, function() {});
+        pettyCache.fetch(key, func, { ttl: 6000 }, function() {});
 
-        pettyCache.fetch(key, func, { expire: 6000 }, function(err, data) {
+        pettyCache.fetch(key, func, { ttl: 6000 }, function(err, data) {
             assert.equal(data, 1);
 
             setTimeout(function() {
-                pettyCache.fetch(key, func, { expire: 6000 }, function(err, data) {
+                pettyCache.fetch(key, func, { ttl: 6000 }, function(err, data) {
                     assert.equal(data, 2);
 
-                    pettyCache.fetch(key, func, { expire: 6000 }, function(err, data) {
+                    pettyCache.fetch(key, func, { ttl: 6000 }, function(err, data) {
                         assert.equal(data, 2);
                         done();
                     });
@@ -449,7 +547,7 @@ describe('PettyCache.get', function() {
             pettyCache.get(key, function(err, value) {
                 assert.equal(value, 'hello world');
 
-                // Wait for local cache to expire
+                // Wait for memory cache to expire
                 setTimeout(function() {
                     pettyCache.get(key, function(err, value) {
                         assert.equal(value, 'hello world');
@@ -464,57 +562,13 @@ describe('PettyCache.get', function() {
         var key = Math.random().toString();
 
         pettyCache.get(key, function(err, value) {
-            assert.equal(value, null);
+            assert.strictEqual(value, null);
 
             pettyCache.get(key, function(err, value) {
-                assert.equal(value, null);
+                assert.strictEqual(value, null);
                 done();
             });
         });
-    });
-});
-
-describe('PettyCache.lock', function() {
-    it('PettyCache.lock should lock for 1 second by default', function(done) {
-        this.timeout(2000);
-
-        var key = Math.random().toString();
-
-        pettyCache.lock(key);
-
-        pettyCache.lock(key, function() {
-            throw 'This function should not be called';
-        });
-
-        setTimeout(function() {
-            pettyCache.lock(key, function() {
-                done();
-            });
-        }, 1001);
-    });
-
-    it('PettyCache.lock should lock for 2 seconds when expire parameter is specified', function(done) {
-        this.timeout(3000);
-
-        var key = Math.random().toString();
-
-        pettyCache.lock(key, { expire: 2000 });
-
-        pettyCache.lock(key, function() {
-            throw 'This function should not be called';
-        });
-
-        setTimeout(function() {
-            pettyCache.lock(key, function() {
-                throw 'This function should not be called';
-            });
-        }, 1001);
-
-        setTimeout(function() {
-            pettyCache.lock(key, function() {
-                done();
-            });
-        }, 2001);
     });
 });
 
@@ -930,7 +984,7 @@ describe('PettyCache.set', function() {
             pettyCache.get(key, function(err, value) {
                 assert.equal(value, 'hello world');
 
-                // Wait for local cache to expire
+                // Wait for memory cache to expire
                 setTimeout(function() {
                     pettyCache.get(key, function(err, value) {
                         assert.equal(value, 'hello world');
@@ -941,22 +995,380 @@ describe('PettyCache.set', function() {
         });
     });
 
-    it('PettyCache.set should set a value with the specified expire option', function(done) {
+    it('PettyCache.set should set a value with the specified TTL option', function(done) {
         this.timeout(7000);
 
         var key = Math.random().toString();
 
-        pettyCache.set(key, 'hello world', { expire: 6000 },function() {
+        pettyCache.set(key, 'hello world', { ttl: 6000 },function() {
             pettyCache.get(key, function(err, value) {
                 assert.equal(value, 'hello world');
 
-                // Wait for cache to expire
+                // Wait for memory cache to expire
                 setTimeout(function() {
                     pettyCache.get(key, function(err, value) {
                         assert.equal(value, null);
                         done();
                     });
                 }, 6001);
+            });
+        });
+    });
+
+    it('PettyCache.set(key, \'\')', function(done) {
+        this.timeout(11000);
+
+        var key = Math.random().toString();
+
+        pettyCache.set(key, '', { ttl: 7000 }, function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key, function(err, value) {
+                assert.ifError(err);
+                assert.strictEqual(value, '');
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    pettyCache.get(key, function(err, value) {
+                        assert.ifError(err);
+                        assert.strictEqual(value, '');
+
+                        // Wait for memory cache and Redis cache to expire
+                        setTimeout(function() {
+                            pettyCache.get(key, function(err, value) {
+                                assert.ifError(err);
+                                assert.strictEqual(value, null);
+                                done();
+                            });
+                        }, 5001);
+                    });
+                }, 5001);
+            });
+        });
+    });
+
+    it('PettyCache.set(key, 0)', function(done) {
+        this.timeout(11000);
+
+        var key = Math.random().toString();
+
+        pettyCache.set(key, 0, { ttl: 7000 }, function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key, function(err, value) {
+                assert.ifError(err);
+                assert.strictEqual(value, 0);
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    pettyCache.get(key, function(err, value) {
+                        assert.ifError(err);
+                        assert.strictEqual(value, 0);
+
+                        // Wait for memory cache and Redis cache to expire
+                        setTimeout(function() {
+                            pettyCache.get(key, function(err, value) {
+                                assert.ifError(err);
+                                assert.strictEqual(value, null);
+                                done();
+                            });
+                        }, 5001);
+                    });
+                }, 5001);
+            });
+        });
+    });
+
+    it('PettyCache.set(key, false)', function(done) {
+        this.timeout(11000);
+
+        var key = Math.random().toString();
+
+        pettyCache.set(key, false, { ttl: 7000 }, function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key, function(err, value) {
+                assert.ifError(err);
+                assert.strictEqual(value, false);
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    pettyCache.get(key, function(err, value) {
+                        assert.ifError(err);
+                        assert.strictEqual(value, false);
+
+                        // Wait for memory cache and Redis cache to expire
+                        setTimeout(function() {
+                            pettyCache.get(key, function(err, value) {
+                                assert.ifError(err);
+                                assert.strictEqual(value, null);
+                                done();
+                            });
+                        }, 5001);
+                    });
+                }, 5001);
+            });
+        });
+    });
+
+    it('PettyCache.set(key, NaN)', function(done) {
+        this.timeout(11000);
+
+        var key = Math.random().toString();
+
+        pettyCache.set(key, NaN, { ttl: 7000 }, function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key, function(err, value) {
+                assert.ifError(err);
+                assert(typeof value === 'number' && isNaN(value));
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    pettyCache.get(key, function(err, value) {
+                        assert.ifError(err);
+                        assert(typeof value === 'number' && isNaN(value));
+
+                        // Wait for memory cache and Redis cache to expire
+                        setTimeout(function() {
+                            pettyCache.get(key, function(err, value) {
+                                assert.ifError(err);
+                                assert.strictEqual(value, null);
+                                done();
+                            });
+                        }, 5001);
+                    });
+                }, 5001);
+            });
+        });
+    });
+
+    it('PettyCache.set(key, null)', function(done) {
+        this.timeout(11000);
+
+        var key = Math.random().toString();
+
+        pettyCache.set(key, null, { ttl: 7000 }, function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key, function(err, value) {
+                assert.ifError(err);
+                assert.strictEqual(value, null);
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    pettyCache.get(key, function(err, value) {
+                        assert.ifError(err);
+                        assert.strictEqual(value, null);
+
+                        // Wait for memory cache and Redis cache to expire
+                        setTimeout(function() {
+                            pettyCache.get(key, function(err, value) {
+                                assert.ifError(err);
+                                assert.strictEqual(value, null);
+                                done();
+                            });
+                        }, 5001);
+                    });
+                }, 5001);
+            });
+        });
+    });
+
+    it('PettyCache.set(key, undefined)', function(done) {
+        this.timeout(11000);
+
+        var key = Math.random().toString();
+
+        pettyCache.set(key, undefined, { ttl: 7000 }, function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key, function(err, value) {
+                assert.ifError(err);
+                assert.strictEqual(value, undefined);
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    pettyCache.get(key, function(err, value) {
+                        assert.ifError(err);
+                        assert.strictEqual(value, undefined);
+
+                        // Wait for memory cache and Redis cache to expire
+                        setTimeout(function() {
+                            pettyCache.get(key, function(err, value) {
+                                assert.ifError(err);
+                                assert.strictEqual(value, null);
+                                done();
+                            });
+                        }, 5001);
+                    });
+                }, 5001);
+            });
+        });
+    });
+});
+
+describe('redisClient', function() {
+    it('redisClient.psetex(key, \'\')', function(done) {
+        var key = Math.random().toString();
+
+        redisClient.psetex(key, 1000, pettyCache.stringify(''), function(err) {
+            assert.ifError(err);
+
+            redisClient.get(key, function(err, data) {
+                assert.ifError(err);
+                assert.strictEqual(data, '""');
+                assert.strictEqual(pettyCache.parse(data), '');
+
+                // Wait for Redis cache to expire
+                setTimeout(function() {
+                    redisClient.get(key, function(err, data) {
+                        assert.ifError(err);
+                        assert.strictEqual(data, null);
+                        done();
+                    });
+                }, 1001);
+            });
+        });
+    });
+
+    it('redisClient.psetex(key, 0)', function(done) {
+        var key = Math.random().toString();
+
+        redisClient.psetex(key, 1000, pettyCache.stringify(0), function(err) {
+            assert.ifError(err);
+
+            redisClient.get(key, function(err, data) {
+                assert.ifError(err);
+                assert.strictEqual(data, '0');
+                assert.strictEqual(pettyCache.parse(data), 0);
+
+                // Wait for Redis cache to expire
+                setTimeout(function() {
+                    redisClient.get(key, function(err, data) {
+                        assert.ifError(err);
+                        assert.strictEqual(data, null);
+                        done();
+                    });
+                }, 1001);
+            });
+        });
+    });
+
+    it('redisClient.psetex(key, false)', function(done) {
+        var key = Math.random().toString();
+
+        redisClient.psetex(key, 1000, pettyCache.stringify(false), function(err) {
+            assert.ifError(err);
+
+            redisClient.get(key, function(err, data) {
+                assert.ifError(err);
+                assert.strictEqual(data, 'false');
+                assert.strictEqual(pettyCache.parse(data), false);
+
+                // Wait for Redis cache to expire
+                setTimeout(function() {
+                    redisClient.get(key, function(err, data) {
+                        assert.ifError(err);
+                        assert.strictEqual(data, null);
+                        done();
+                    });
+                }, 1001);
+            });
+        });
+    });
+
+    it('redisClient.psetex(key, NaN)', function(done) {
+        var key = Math.random().toString();
+
+        redisClient.psetex(key, 1000, pettyCache.stringify(NaN), function(err) {
+            assert.ifError(err);
+
+            redisClient.get(key, function(err, data) {
+                assert.ifError(err);
+                assert.strictEqual(data, '"__NaN"');
+                assert(isNaN(pettyCache.parse(data)));
+
+                // Wait for Redis cache to expire
+                setTimeout(function() {
+                    redisClient.get(key, function(err, data) {
+                        assert.ifError(err);
+                        assert.strictEqual(data, null);
+                        done();
+                    });
+                }, 1001);
+            });
+        });
+    });
+
+    it('redisClient.psetex(key, null)', function(done) {
+        var key = Math.random().toString();
+
+        redisClient.psetex(key, 1000, pettyCache.stringify(null), function(err) {
+            assert.ifError(err);
+
+            redisClient.get(key, function(err, data) {
+                assert.ifError(err);
+                assert.strictEqual(data, '"__null"');
+                assert.strictEqual(pettyCache.parse(data), null);
+
+                // Wait for Redis cache to expire
+                setTimeout(function() {
+                    redisClient.get(key, function(err, data) {
+                        assert.ifError(err);
+                        assert.strictEqual(data, null);
+                        done();
+                    });
+                }, 1001);
+            });
+        });
+    });
+
+    it('redisClient.psetex(key, undefined)', function(done) {
+        var key = Math.random().toString();
+
+        redisClient.psetex(key, 1000, pettyCache.stringify(undefined), function(err) {
+            assert.ifError(err);
+
+            redisClient.get(key, function(err, data) {
+                assert.ifError(err);
+                assert.strictEqual(data, '"__undefined"');
+                assert.strictEqual(pettyCache.parse(data), undefined);
+
+                // Wait for Redis cache to expire
+                setTimeout(function() {
+                    redisClient.get(key, function(err, data) {
+                        assert.ifError(err);
+                        assert.strictEqual(data, null);
+                        done();
+                    });
+                }, 1001);
+            });
+        });
+    });
+});
+
+describe.skip('Performance', function() {
+    it('should be faster than redis client for multiple GETs', function(done) {
+        var key = Math.random().toString();
+
+        pettyCache.set(key, 'hello world', function() {
+            var start = Date.now();
+
+            async.times(1000, function(n, callback) {
+                redisClient.get(key, callback);
+            }, function() {
+                var ellapsed1 = Date.now() - start;
+
+                async.times(1000, function(n, callback) {
+                    pettyCache.get(key, callback);
+                }, function() {
+                    var ellapsed2 = Date.now() - start;
+
+                    console.log(ellapsed1, ellapsed2);
+                    assert(ellapsed2 <= ellapsed1);
+                    done();
+                });
             });
         });
     });
