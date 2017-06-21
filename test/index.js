@@ -117,7 +117,7 @@ describe('PettyCache.bulkFetch', function() {
                     assert.strictEqual(values.c[0], 3);
                     assert.strictEqual(values.d.num, 4);
 
-                    // Call bulkFetch again to ensure local cache serialization is working as expected.
+                    // Call bulkFetch again to ensure memory serialization is working as expected.
                     pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function() {
                         throw 'This function should not be called';
                     }, function(err, values) {
@@ -136,7 +136,7 @@ describe('PettyCache.bulkFetch', function() {
                                 assert.strictEqual(values.c[0], 3);
                                 assert.strictEqual(values.d.num, 4);
 
-                                // Call bulkFetch again to ensure local cache serialization is working as expected.
+                                // Call bulkFetch again to ensure memory serialization is working as expected.
                                 pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function() {
                                     throw 'This function should not be called';
                                 }, function(err, values) {
@@ -201,7 +201,7 @@ describe('PettyCache.bulkFetch', function() {
 
 describe('PettyCache.bulkGet', function() {
     it('PettyCache.bulkGet should return values', function(done) {
-        this.timeout(7000);
+        this.timeout(6000);
 
         var key1 = Math.random().toString();
         var key2 = Math.random().toString();
@@ -211,29 +211,29 @@ describe('PettyCache.bulkGet', function() {
             pettyCache.set(key2, '2', function() {
                 pettyCache.set(key3, '3', function() {
                     pettyCache.bulkGet([key1, key2, key3], function(err, values) {
-                        assert.equal(Object.keys(values).length, 3);
-                        assert.equal(values[key1], '1');
-                        assert.equal(values[key2], '2');
-                        assert.equal(values[key3], '3');
+                        assert.strictEqual(Object.keys(values).length, 3);
+                        assert.strictEqual(values[key1], '1');
+                        assert.strictEqual(values[key2], '2');
+                        assert.strictEqual(values[key3], '3');
 
                         // Call bulkGet again while values are still in memory cache
                         pettyCache.bulkGet([key1, key2, key3], function(err, values) {
-                            assert.equal(Object.keys(values).length, 3);
-                            assert.equal(values[key1], '1');
-                            assert.equal(values[key2], '2');
-                            assert.equal(values[key3], '3');
+                            assert.strictEqual(Object.keys(values).length, 3);
+                            assert.strictEqual(values[key1], '1');
+                            assert.strictEqual(values[key2], '2');
+                            assert.strictEqual(values[key3], '3');
 
                             // Wait for memory cache to expire
                             setTimeout(function() {
                                 // Ensure keys are still in Redis
                                 pettyCache.bulkGet([key1, key2, key3], function(err, values) {
-                                    assert.equal(Object.keys(values).length, 3);
-                                    assert.equal(values[key1], '1');
-                                    assert.equal(values[key2], '2');
-                                    assert.equal(values[key3], '3');
+                                    assert.strictEqual(Object.keys(values).length, 3);
+                                    assert.strictEqual(values[key1], '1');
+                                    assert.strictEqual(values[key2], '2');
+                                    assert.strictEqual(values[key3], '3');
                                     done();
                                 });
-                            }, 6000);
+                            }, 5001);
                         });
                     });
                 });
@@ -241,8 +241,8 @@ describe('PettyCache.bulkGet', function() {
         });
     });
 
-    it('PettyCache.bulkGet should return undefined for missing keys', function(done) {
-        this.timeout(7000);
+    it('PettyCache.bulkGet should return null for missing keys', function(done) {
+        this.timeout(6000);
 
         var key1 = Math.random().toString();
         var key2 = Math.random().toString();
@@ -251,31 +251,110 @@ describe('PettyCache.bulkGet', function() {
         pettyCache.set(key1, '1', function() {
             pettyCache.set(key2, '2', function() {
                 pettyCache.bulkGet([key1, key2, key3], function(err, values) {
-                    assert.equal(Object.keys(values).length, 3);
-                    assert.equal(values[key1], '1');
-                    assert.equal(values[key2], '2');
-                    assert.equal(values[key3], undefined);
+                    assert.strictEqual(Object.keys(values).length, 3);
+                    assert.strictEqual(values[key1], '1');
+                    assert.strictEqual(values[key2], '2');
+                    assert.strictEqual(values[key3], null);
 
                     // Call bulkGet again while values are still in memory cache
                     pettyCache.bulkGet([key1, key2, key3], function(err, values) {
-                        assert.equal(Object.keys(values).length, 3);
-                        assert.equal(values[key1], '1');
-                        assert.equal(values[key2], '2');
-                        assert.equal(values[key3], undefined);
+                        assert.strictEqual(Object.keys(values).length, 3);
+                        assert.strictEqual(values[key1], '1');
+                        assert.strictEqual(values[key2], '2');
+                        assert.strictEqual(values[key3], null);
 
                         // Wait for memory cache to expire
                         setTimeout(function() {
                             // Ensure keys are still in Redis
                             pettyCache.bulkGet([key1, key2, key3], function(err, values) {
-                                assert.equal(Object.keys(values).length, 3);
-                                assert.equal(values[key1], '1');
-                                assert.equal(values[key2], '2');
-                                assert.equal(values[key3], undefined);
+                                assert.strictEqual(Object.keys(values).length, 3);
+                                assert.strictEqual(values[key1], '1');
+                                assert.strictEqual(values[key2], '2');
+                                assert.strictEqual(values[key3], null);
                                 done();
                             });
-                        }, 6000);
+                        }, 5001);
                     });
                 });
+            });
+        });
+    });
+
+    it('PettyCache.bulkGet should correctly handle falsy values', function(done) {
+        this.timeout(12000);
+
+        var key1 = Math.random().toString();
+        var key2 = Math.random().toString();
+        var key3 = Math.random().toString();
+        var key4 = Math.random().toString();
+        var key5 = Math.random().toString();
+        var key6 = Math.random().toString();
+        var values = {};
+
+        values[key1] = '';
+        values[key2] = 0;
+        values[key3] = false;
+        values[key4] = NaN;
+        values[key5] = null;
+        values[key6] = undefined;
+
+        async.each(Object.keys(values), function(key, callback) {
+            pettyCache.set(key, values[key], { ttl: 6000 }, callback);
+        }, function(err) {
+            assert.ifError(err);
+
+            var keys = Object.keys(values);
+
+            // Add an additional key to check handling of missing keys
+            var key7 = Math.random().toString();
+            keys.push(key7);
+
+            pettyCache.bulkGet(keys, function(err, data) {
+                assert.ifError(err);
+                assert.strictEqual(keys.length, 7);
+                assert.strictEqual(Object.keys(data).length, 7);
+                assert.strictEqual(data[key1], '');
+                assert.strictEqual(data[key2], 0);
+                assert.strictEqual(data[key3], false);
+                assert.strictEqual(typeof data[key4], 'number');
+                assert(isNaN(data[key4]));
+                assert.strictEqual(data[key5], null);
+                assert.strictEqual(data[key6], undefined);
+                assert.strictEqual(data[key7], null);
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    // Ensure keys are still in Redis
+                    pettyCache.bulkGet(keys, function(err, data) {
+                        assert.ifError(err);
+                        assert.strictEqual(Object.keys(data).length, 7);
+                        assert.strictEqual(data[key1], '');
+                        assert.strictEqual(data[key2], 0);
+                        assert.strictEqual(data[key3], false);
+                        assert.strictEqual(typeof data[key4], 'number');
+                        assert(isNaN(data[key4]));
+                        assert.strictEqual(data[key5], null);
+                        assert.strictEqual(data[key6], undefined);
+                        assert.strictEqual(data[key7], null);
+
+                        // Wait for Redis cache to expire
+                        setTimeout(function() {
+                            // Ensure keys are not in Redis
+                            pettyCache.bulkGet(keys, function(err, data) {
+                                assert.ifError(err);
+                                assert.strictEqual(Object.keys(data).length, 7);
+                                assert.strictEqual(data[key1], null);
+                                assert.strictEqual(data[key2], null);
+                                assert.strictEqual(data[key3], null);
+                                assert.strictEqual(data[key4], null);
+                                assert.strictEqual(data[key5], null);
+                                assert.strictEqual(data[key6], null);
+                                assert.strictEqual(data[key7], null);
+                                done();
+                            });
+                        }, 6001);
+                    });
+                }, 5001);
             });
         });
     });
@@ -283,7 +362,7 @@ describe('PettyCache.bulkGet', function() {
 
 describe('PettyCache.bulkSet', function() {
     it('PettyCache.bulkSet should set values', function(done) {
-        this.timeout(7000);
+        this.timeout(6000);
 
         var key1 = Math.random().toString();
         var key2 = Math.random().toString();
@@ -298,29 +377,35 @@ describe('PettyCache.bulkSet', function() {
             assert.ifError(err);
 
             pettyCache.get(key1, function(err, value) {
+                assert.ifError(err);
                 assert.strictEqual(value, '1');
 
                 pettyCache.get(key2, function(err, value) {
+                    assert.ifError(err);
                     assert.strictEqual(value, 2);
 
                     pettyCache.get(key3, function(err, value) {
+                        assert.ifError(err);
                         assert.strictEqual(value, '3');
 
-                        // Wait for memore cache to expire
+                        // Wait for memory cache to expire
                         setTimeout(function() {
                             pettyCache.get(key1, function(err, value) {
+                                assert.ifError(err);
                                 assert.strictEqual(value, '1');
 
                                 pettyCache.get(key2, function(err, value) {
+                                    assert.ifError(err);
                                     assert.strictEqual(value, 2);
 
                                     pettyCache.get(key3, function(err, value) {
+                                        assert.ifError(err);
                                         assert.strictEqual(value, '3');
                                         done();
                                     });
                                 });
                             });
-                        }, 6000);
+                        }, 5001);
                     });
                 });
             });
@@ -343,23 +428,29 @@ describe('PettyCache.bulkSet', function() {
             assert.ifError(err);
 
             pettyCache.get(key1, function(err, value) {
+                assert.ifError(err);
                 assert.strictEqual(value, '1');
 
                 pettyCache.get(key2, function(err, value) {
+                    assert.ifError(err);
                     assert.strictEqual(value, 2);
 
                     pettyCache.get(key3, function(err, value) {
+                        assert.ifError(err);
                         assert.strictEqual(value, '3');
 
-                        // Wait for memory cache to expire
+                        // Wait for Redis cache to expire
                         setTimeout(function() {
                             pettyCache.get(key1, function(err, value) {
+                                assert.ifError(err);
                                 assert.strictEqual(value, null);
 
                                 pettyCache.get(key2, function(err, value) {
+                                    assert.ifError(err);
                                     assert.strictEqual(value, null);
 
                                     pettyCache.get(key3, function(err, value) {
+                                        assert.ifError(err);
                                         assert.strictEqual(value, null);
                                         done();
                                     });
@@ -377,11 +468,11 @@ describe('PettyCache.del', function() {
     it('PettyCache.del', function(done) {
         var key = Math.random().toString();
 
-        pettyCache.set(key, 'hello world', function(err) {
+        pettyCache.set(key, key.split('').reverse().join(''), function(err) {
             assert.ifError(err);
 
             pettyCache.get(key, function(err, value) {
-                assert.strictEqual(value, 'hello world');
+                assert.strictEqual(value, key.split('').reverse().join(''));
 
                 pettyCache.del(key, function(err) {
                     assert.ifError(err);
@@ -673,6 +764,7 @@ describe('PettyCache.patch', function() {
     it('PettyCache.patch should update the values of given object keys', function(done) {
         pettyCache.patch(key, { b: 4, c: 5 }, function(err) {
             assert(!err, 'Error: ' + err);
+
             pettyCache.get(key, function(err, data) {
                 assert(!err, 'Error: ' + err);
                 assert.deepEqual(data, { a: 1, b: 4, c: 5 });
@@ -1209,16 +1301,64 @@ describe('PettyCache.set', function() {
 });
 
 describe('redisClient', function() {
+    it('redisClient.mget(falsy keys)', function(done) {
+        var key1 = Math.random().toString();
+        var key2 = Math.random().toString();
+        var key3 = Math.random().toString();
+        var key4 = Math.random().toString();
+        var key5 = Math.random().toString();
+        var key6 = Math.random().toString();
+        var values = {};
+
+        values[key1] = '';
+        values[key2] = 0;
+        values[key3] = false;
+        values[key4] = NaN;
+        values[key5] = null;
+        values[key6] = undefined;
+
+        async.each(Object.keys(values), function(key, callback) {
+            redisClient.psetex(key, 1000, PettyCache.stringify(values[key]), callback);
+        }, function(err) {
+            assert.ifError(err);
+
+            var keys = Object.keys(values);
+
+            // Add an additional key to check handling of missing keys
+            keys.push(Math.random().toString());
+
+            redisClient.mget(keys, function(err, data) {
+                assert.ifError(err);
+                assert.strictEqual(data.length, 7);
+                assert.strictEqual(data[0], '""');
+                assert.strictEqual(PettyCache.parse(data[0]), '');
+                assert.strictEqual(data[1], '0');
+                assert.strictEqual(PettyCache.parse(data[1]), 0);
+                assert.strictEqual(data[2], 'false');
+                assert.strictEqual(PettyCache.parse(data[2]), false);
+                assert.strictEqual(data[3], '"__NaN"');
+                assert.strictEqual(typeof PettyCache.parse(data[3]), 'number');
+                assert(isNaN(PettyCache.parse(data[3])));
+                assert.strictEqual(data[4], '"__null"');
+                assert.strictEqual(PettyCache.parse(data[4]), null);
+                assert.strictEqual(data[5], '"__undefined"');
+                assert.strictEqual(PettyCache.parse(data[5]), undefined);
+                assert.strictEqual(data[6], null);
+                done();
+            });
+        });
+    });
+
     it('redisClient.psetex(key, \'\')', function(done) {
         var key = Math.random().toString();
 
-        redisClient.psetex(key, 1000, pettyCache.stringify(''), function(err) {
+        redisClient.psetex(key, 1000, PettyCache.stringify(''), function(err) {
             assert.ifError(err);
 
             redisClient.get(key, function(err, data) {
                 assert.ifError(err);
                 assert.strictEqual(data, '""');
-                assert.strictEqual(pettyCache.parse(data), '');
+                assert.strictEqual(PettyCache.parse(data), '');
 
                 // Wait for Redis cache to expire
                 setTimeout(function() {
@@ -1235,13 +1375,13 @@ describe('redisClient', function() {
     it('redisClient.psetex(key, 0)', function(done) {
         var key = Math.random().toString();
 
-        redisClient.psetex(key, 1000, pettyCache.stringify(0), function(err) {
+        redisClient.psetex(key, 1000, PettyCache.stringify(0), function(err) {
             assert.ifError(err);
 
             redisClient.get(key, function(err, data) {
                 assert.ifError(err);
                 assert.strictEqual(data, '0');
-                assert.strictEqual(pettyCache.parse(data), 0);
+                assert.strictEqual(PettyCache.parse(data), 0);
 
                 // Wait for Redis cache to expire
                 setTimeout(function() {
@@ -1258,13 +1398,13 @@ describe('redisClient', function() {
     it('redisClient.psetex(key, false)', function(done) {
         var key = Math.random().toString();
 
-        redisClient.psetex(key, 1000, pettyCache.stringify(false), function(err) {
+        redisClient.psetex(key, 1000, PettyCache.stringify(false), function(err) {
             assert.ifError(err);
 
             redisClient.get(key, function(err, data) {
                 assert.ifError(err);
                 assert.strictEqual(data, 'false');
-                assert.strictEqual(pettyCache.parse(data), false);
+                assert.strictEqual(PettyCache.parse(data), false);
 
                 // Wait for Redis cache to expire
                 setTimeout(function() {
@@ -1281,13 +1421,13 @@ describe('redisClient', function() {
     it('redisClient.psetex(key, NaN)', function(done) {
         var key = Math.random().toString();
 
-        redisClient.psetex(key, 1000, pettyCache.stringify(NaN), function(err) {
+        redisClient.psetex(key, 1000, PettyCache.stringify(NaN), function(err) {
             assert.ifError(err);
 
             redisClient.get(key, function(err, data) {
                 assert.ifError(err);
                 assert.strictEqual(data, '"__NaN"');
-                assert(isNaN(pettyCache.parse(data)));
+                assert(isNaN(PettyCache.parse(data)));
 
                 // Wait for Redis cache to expire
                 setTimeout(function() {
@@ -1304,13 +1444,13 @@ describe('redisClient', function() {
     it('redisClient.psetex(key, null)', function(done) {
         var key = Math.random().toString();
 
-        redisClient.psetex(key, 1000, pettyCache.stringify(null), function(err) {
+        redisClient.psetex(key, 1000, PettyCache.stringify(null), function(err) {
             assert.ifError(err);
 
             redisClient.get(key, function(err, data) {
                 assert.ifError(err);
                 assert.strictEqual(data, '"__null"');
-                assert.strictEqual(pettyCache.parse(data), null);
+                assert.strictEqual(PettyCache.parse(data), null);
 
                 // Wait for Redis cache to expire
                 setTimeout(function() {
@@ -1327,13 +1467,13 @@ describe('redisClient', function() {
     it('redisClient.psetex(key, undefined)', function(done) {
         var key = Math.random().toString();
 
-        redisClient.psetex(key, 1000, pettyCache.stringify(undefined), function(err) {
+        redisClient.psetex(key, 1000, PettyCache.stringify(undefined), function(err) {
             assert.ifError(err);
 
             redisClient.get(key, function(err, data) {
                 assert.ifError(err);
                 assert.strictEqual(data, '"__undefined"');
-                assert.strictEqual(pettyCache.parse(data), undefined);
+                assert.strictEqual(PettyCache.parse(data), undefined);
 
                 // Wait for Redis cache to expire
                 setTimeout(function() {
@@ -1343,32 +1483,6 @@ describe('redisClient', function() {
                         done();
                     });
                 }, 1001);
-            });
-        });
-    });
-});
-
-describe.skip('Performance', function() {
-    it('should be faster than redis client for multiple GETs', function(done) {
-        var key = Math.random().toString();
-
-        pettyCache.set(key, 'hello world', function() {
-            var start = Date.now();
-
-            async.times(1000, function(n, callback) {
-                redisClient.get(key, callback);
-            }, function() {
-                var ellapsed1 = Date.now() - start;
-
-                async.times(1000, function(n, callback) {
-                    pettyCache.get(key, callback);
-                }, function() {
-                    var ellapsed2 = Date.now() - start;
-
-                    console.log(ellapsed1, ellapsed2);
-                    assert(ellapsed2 <= ellapsed1);
-                    done();
-                });
             });
         });
     });

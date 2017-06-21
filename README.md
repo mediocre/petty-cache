@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/mediocre/petty-cache.svg?branch=master)](https://travis-ci.org/mediocre/petty-cache)
 [![Coverage Status](https://coveralls.io/repos/github/mediocre/petty-cache/badge.svg?branch=master)](https://coveralls.io/github/mediocre/petty-cache?branch=master)
 
-A cache module for Node.js that uses a two-level cache (in-memory cache for recently accessed data plus Redis for distributed caching) with some extra features to avoid cache stampedes and thundering herds.
+A cache module for Node.js that uses a two-level cache (in-memory cache for recently accessed data plus Redis for distributed caching) with automatic serialization plus some extra features to avoid cache stampedes and thundering herds.
 
 Also includes mutex and semaphore distributed locking primitives.
 
@@ -23,6 +23,13 @@ Provides a distributed lock (mutex) with the ability to retry a specified number
 
 **Semaphore**
 Provides a pool of distributed locks with the ability to release a slot back to the pool or remove the slot from the pool so that it's not used again.
+
+## Changes since v1.x
+
+- The `expire` option has been renamed to `ttl`.
+- `PettyCache.lock` (deprecated in v1.4) has now been removed. Use `PettyCache.mutex.lock` instead.
+- Big performance increase with in-memory cache.
+- Falsy values are now serialized and deserialized. You can cache `null`/`undefined` and get `null`/`undefined` back from cache.
 
 ## Getting Started
 
