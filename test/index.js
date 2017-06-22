@@ -556,14 +556,14 @@ describe('PettyCache.fetch', function() {
             pettyCache.fetch(key, function() {
                 throw 'This function should not be called';
             }, function(err, data) {
-                assert.strictEqual(data, null);
+                assert.strictEqual(data, undefined);
 
                 // Wait for memory cache to expire
                 setTimeout(function() {
                     pettyCache.fetch(key, function() {
                         throw 'This function should not be called';
                     }, function(err, data) {
-                        assert.strictEqual(data, null);
+                        assert.strictEqual(data, undefined);
                         done();
                     });
                 }, 6000);

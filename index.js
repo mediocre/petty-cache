@@ -14,7 +14,7 @@ function PettyCache(port, host, options) {
             return callback(null, {});
         }
 
-        // Try to get values from Redis cache
+        // Try to get values from Redis
         redisClient.mget(keys, function(err, data) {
             if (err) {
                 return callback(err);
@@ -57,13 +57,13 @@ function PettyCache(port, host, options) {
     }
 
     function getFromRedis(key, callback) {
-        // Try to get value from Redis cache
+        // Try to get value from Redis
         redisClient.get(key, function(err, data) {
             if (err) {
                 return callback(err);
             }
 
-            // Return if the key wasn't found in Redis cache
+            // Return if the key wasn't found in Redis
             if (data === null) {
                 return callback(null, { exists: false });
             }
@@ -71,6 +71,78 @@ function PettyCache(port, host, options) {
             callback(null, { exists: true, value: PettyCache.parse(data) });
         });
     }
+
+    /**
+     * @param {Array} keys - An array of keys.
+     */
+    this.bulkFetch = function(keys, func, options, callback) {
+        // Options are optional
+        if (!callback) {
+            callback = options;
+        }
+
+        // If there aren't any keys, return
+        if (!keys.length) {
+            return callback(null, {});
+        }
+
+        const _keys = Array.from(new Set(keys));
+        const values = {};
+
+        // Try to get values from memory cache
+        for (var i = _keys.length - 1; i >= 0; i--) {
+            const key = _keys[i];
+            const result = getFromMemoryCache(key);
+
+            if (result.exists) {
+                values[key] = result.value;
+                _keys.splice(i, 1);
+            }
+        }
+
+        // If there aren't any keys left, return
+        if (!_keys.length) {
+            return callback(null, values);
+        }
+
+        const _this = this;
+
+        // Try to get values from Redis
+        bulkGetFromRedis(_keys, function(err, results) {
+            if (err) {
+                return callback(err);
+            }
+
+            for (var i = _keys.length - 1; i >= 0; i--) {
+                const key = _keys[i];
+                const result = results[key];
+
+                if (result.exists) {
+                    _keys.splice(i, 1);
+                    values[key] = result.value;
+
+                    // Store value in memory cache with a short expiration
+                    memoryCache.put(key, result.value, random(2000, 5000));
+                }
+            }
+
+            // If there aren't any keys left, return
+            if (!_keys.length) {
+                return callback(null, values);
+            }
+
+            // Execute the specified function for remaining keys
+            func(_keys, function(err, data) {
+                if (err) {
+                    return callback(err);
+                }
+
+                Object.keys(data).forEach(key => values[key] = data[key]);
+
+                _this.bulkSet(data, err => callback(err, values));
+            });
+        });
+    };
 
     /**
      * @param {Array} keys - An array of keys.
@@ -105,7 +177,7 @@ function PettyCache(port, host, options) {
             return callback(null, values);
         }
 
-        // Try to get values from Redis cache
+        // Try to get values from Redis
         bulkGetFromRedis(_keys, function(err, results) {
             if (err) {
                 return callback(err);
@@ -163,6 +235,77 @@ function PettyCache(port, host, options) {
 
             memoryCache.del(key);
             callback();
+        });
+    };
+
+    // Returns data from cache if available;
+    // otherwise executes the specified function and places the results in cache before returning the data.
+    this.fetch = function(key, func, options, callback) {
+        // Options are optional
+        if (!callback) {
+            callback = options;
+        }
+
+        // Try to get value from memory cache
+        var result = getFromMemoryCache(key);
+
+        // Return value from memory cache if it exists
+        if (result.exists) {
+            return callback(null, result.value);
+        }
+
+        const _this = this;
+
+        // Try to get value from Redis
+        getFromRedis(key, function(err, result) {
+            if (err) {
+                return callback(err);
+            }
+
+            // Return value from Redis if it exists
+            if (result.exists) {
+                memoryCache.put(key, result.value, random(2000, 5000));
+                return callback(null, result.value);
+            }
+
+            // Double-checked locking: http://en.wikipedia.org/wiki/Double-checked_locking
+            lock(key, function(release) {
+                // Try to get value from memory cache
+                result = getFromMemoryCache(key);
+
+                // Return value from memory cache if it exists
+                if (result.exists) {
+                    release()();
+                    return callback(null, result.value);
+                }
+
+                // Try to get value from Redis
+                getFromRedis(key, function(err, result) {
+                    if (err) {
+                        release()();
+                        return callback(err);
+                    }
+
+                    // Return value from Redis if it exists
+                    if (result.exists) {
+                        memoryCache.put(key, result.value, random(2000, 5000));
+                        release()();
+                        return callback(null, result.value);
+                    }
+
+                    // Execute the specified function and place the results in cache before returning the data
+                    func(function(err, data) {
+                        if (err) {
+                            release()();
+                            return callback(err);
+                        }
+
+                        _this.set(key, data, options, release(function(err) {
+                            callback(err, data);
+                        }));
+                    });
+                });
+            });
         });
     };
 
@@ -551,7 +694,7 @@ function PettyCache(port, host, options) {
         // Store value in memory cache with a short expiration
         memoryCache.put(key, value, random(2000, 5000));
 
-        // Store value is Redis cache
+        // Store value is Redis
         redisClient.psetex(key, options.ttl || random(30000, 60000), PettyCache.stringify(value), callback);
     };
 
@@ -592,109 +735,6 @@ PettyCache.stringify = function(value) {
         }
 
         return v;
-    });
-};
-
-/**
- * @param {Array} keys - An array of keys.
- */
-PettyCache.prototype.bulkFetch = function(keys, func, options, callback) {
-    // Options are optional
-    if (!callback) {
-        callback = options;
-    }
-
-    // If there aren't any keys, return
-    if (!keys.length) {
-        return callback(null, {});
-    }
-
-    const _this = this;
-
-    this.bulkGet(keys, function(err, values) {
-        const missedKeys = Object.keys(values).filter(k => values[k] === undefined);
-
-        // If there aren't any keys missing values, return.
-        if (!missedKeys.length) {
-            return callback(null, values);
-        }
-
-        func(missedKeys, function(err, data) {
-            if (err) {
-                return callback(err);
-            }
-
-            Object.keys(data).forEach(key => values[key] = data[key]);
-
-            _this.bulkSet(data, err => callback(err, values));
-        });
-    });
-};
-
-// Returns data from cache if available;
-// otherwise executes the specified function and places the results in cache before returning the data.
-PettyCache.prototype.fetch = function(key, func, options, callback) {
-    // Options are optional
-    if (!callback) {
-        callback = options;
-    }
-
-    // Try to get value from memory cache
-    var value = memoryCache.get(key);
-
-    // Return value from memory cache if it's not null (or the key exists)
-    if (value) {
-        return callback(null, value);
-    }
-
-    var _this = this;
-
-    this.redisClient.get(key, function(err, data) {
-        if (err) {
-            return callback(err);
-        }
-
-        if (data) {
-            var result = _this.parse(data);
-            memoryCache.put(key, data, random(2000, 5000));
-            return callback(null, result);
-        }
-
-        // Double-checked locking: http://en.wikipedia.org/wiki/Double-checked_locking
-        lock(key, function(release) {
-            // Try to get value from memory cache
-            value = memoryCache.get(key);
-
-            // Return value from memory cache if it's not null (or the key exists)
-            if (value !== null) {
-                release()();
-                return callback(null, value);
-            }
-
-            _this.redisClient.get(key, function(err, data) {
-                if (err) {
-                    release()();
-                    return callback(err);
-                }
-
-                if (data) {
-                    var result = this.parse(data);
-                    memoryCache.put(key, data, random(2000, 5000));
-
-                    release()();
-                    return callback(null, result);
-                }
-
-                func(function(err, data) {
-                    if (err) {
-                        release()();
-                        return callback(err);
-                    }
-
-                    _this.set(key, data, options, release(function(err) { callback(err, data); }));
-                });
-            });
-        });
     });
 };
 
