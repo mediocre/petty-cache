@@ -1526,3 +1526,53 @@ describe('redisClient', function() {
         });
     });
 });
+
+describe('Benchmark', function() {
+    const emojis = require('./emojis.json');
+
+    it('PettyCache should be faster than node-redis', function(done) {
+        var pettyCacheEnd;
+        var pettyCacheKey = Math.random().toString();
+        var pettyCacheStart;
+        var redisEnd;
+        var redisKey = Math.random().toString();
+        var redisStart = Date.now();
+
+        redisClient.psetex(redisKey, 30000, JSON.stringify(emojis), function(err) {
+            assert.ifError(err);
+
+            async.times(1000, function(n, callback) {
+                redisClient.get(redisKey, function(err, data) {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    callback(null, JSON.parse(data));
+                });
+            }, function(err) {
+                redisEnd = Date.now();
+                assert.ifError(err);
+                pettyCacheStart = Date.now();
+
+                pettyCache.set(pettyCacheKey, emojis, function(err) {
+                    assert.ifError(err);
+
+                    async.times(1000, function(n, callback) {
+                        pettyCache.get(pettyCacheKey, function(err, data) {
+                            if (err) {
+                                return callback(err);
+                            }
+
+                            callback(null, data);
+                        });
+                    }, function(err) {
+                        pettyCacheEnd = Date.now();
+                        assert.ifError(err);
+                        assert(pettyCacheEnd - pettyCacheStart < redisEnd - redisStart);
+                        done();
+                    });
+                });
+            });
+        });
+    });
+});
