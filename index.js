@@ -75,12 +75,7 @@ function PettyCache(port, host, options) {
     /**
      * @param {Array} keys - An array of keys.
      */
-    this.bulkFetch = function(keys, func, options, callback) {
-        // Options are optional
-        if (!callback) {
-            callback = options;
-        }
-
+    this.bulkFetch = function(keys, func, callback) {
         // If there aren't any keys, return
         if (!keys.length) {
             return callback(null, {});
@@ -147,12 +142,7 @@ function PettyCache(port, host, options) {
     /**
      * @param {Array} keys - An array of keys.
      */
-    this.bulkGet = function(keys, options, callback) {
-        // Options are optional
-        if (!callback) {
-            callback = options;
-        }
-
+    this.bulkGet = function(keys, callback) {
         // If there aren't any keys, return
         if (!keys.length) {
             return callback(null, {});
@@ -699,10 +689,8 @@ function PettyCache(port, host, options) {
     };
 
     // Semaphore functions need to be bound to the main PettyCache object
-    for (let method in this.semaphore) {
-        if (typeof this.semaphore[method] === 'function') {
-            this.semaphore[method] = this.semaphore[method].bind(this);
-        }
+    for (var method in this.semaphore) {
+        this.semaphore[method] = this.semaphore[method].bind(this);
     }
 }
 

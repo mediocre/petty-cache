@@ -144,11 +144,10 @@ describe('PettyCache.bulkFetch', function() {
                                     assert.strictEqual(values.b, '2');
                                     assert.strictEqual(values.c[0], 3);
                                     assert.strictEqual(values.d.num, 4);
-
                                     done();
                                 });
                             });
-                        }, 6000);
+                        }, 5001);
                     });
                 });
             });
@@ -195,6 +194,27 @@ describe('PettyCache.bulkFetch', function() {
                     });
                 }, 6000);
             });
+        });
+    });
+
+    it('PettyCache.bulkFetch should return empty object when no keys are passed', function(done) {
+        pettyCache.bulkFetch([], function() {
+            throw 'This function should not be called';
+        }, function(err, values) {
+            assert.ifError(err);
+            assert.deepEqual(values, {});
+            done();
+        });
+    });
+
+    it('PettyCache.bulkFetch should return error if func returns error', function(done) {
+        pettyCache.bulkFetch([Math.random().toString()], function(keys, callback) {
+            callback(new Error('PettyCache.bulkFetch should return error if func returns error'));
+        }, function(err, values) {
+            assert(err);
+            assert.strictEqual(err.message, 'PettyCache.bulkFetch should return error if func returns error');
+            assert(!values);
+            done();
         });
     });
 });
@@ -356,6 +376,14 @@ describe('PettyCache.bulkGet', function() {
                     });
                 }, 5001);
             });
+        });
+    });
+
+    it('PettyCache.bulkGet should return empty object when no keys are passed', function(done) {
+        pettyCache.bulkGet([], function(err, values) {
+            assert.ifError(err);
+            assert.deepEqual(values, {});
+            done();
         });
     });
 });
@@ -624,6 +652,17 @@ describe('PettyCache.fetch', function() {
                     });
                 });
             }, 6001);
+        });
+    });
+
+    it('PettyCache.fetch should return error if func returns error', function(done) {
+        pettyCache.fetch(Math.random().toString(), function(callback) {
+            callback(new Error('PettyCache.fetch should return error if func returns error'));
+        }, function(err, values) {
+            assert(err);
+            assert.strictEqual(err.message, 'PettyCache.fetch should return error if func returns error');
+            assert(!values);
+            done();
         });
     });
 });
