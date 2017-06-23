@@ -231,10 +231,15 @@ function PettyCache(port, host, options) {
     // Returns data from cache if available;
     // otherwise executes the specified function and places the results in cache before returning the data.
     this.fetch = function(key, func, options, callback) {
-        // Options are optional
-        if (!callback) {
+        options = options || {};
+
+        if (typeof options === 'function') {
             callback = options;
+            options = {};
         }
+
+        // Default callback is a noop
+        callback = callback || function() {};
 
         // Try to get value from memory cache
         var result = getFromMemoryCache(key);
