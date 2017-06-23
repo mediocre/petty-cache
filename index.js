@@ -675,16 +675,15 @@ function PettyCache(port, host, options) {
     };
 
     this.set = function(key, value, options, callback) {
-        // Options are optional
-        if (!callback) {
+        options = options || {};
+
+        if (typeof options === 'function') {
             callback = options;
             options = {};
         }
 
         // Default callback is a noop
-        if (!callback) {
-            callback = function() {};
-        }
+        callback = callback || function() {};
 
         // Store value in memory cache with a short expiration
         memoryCache.put(key, value, random(2000, 5000));
