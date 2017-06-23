@@ -783,6 +783,17 @@ describe('PettyCache.mutex', function() {
                 });
             });
         });
+
+        it('PettyCache.mutex.unlock should work without a callback', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.mutex.lock(key, { ttl: 10000 }, function(err) {
+                assert.ifError(err);
+
+                pettyCache.mutex.unlock(key);
+                done();
+            });
+        });
     });
 });
 
@@ -1124,6 +1135,11 @@ describe('PettyCache.set', function() {
                 }, 6000);
             });
         });
+    });
+
+    it('PettyCache.set work without a callback', function(done) {
+        pettyCache.set(Math.random().toString(), 'hello world');
+        done();
     });
 
     it('PettyCache.set should set a value with the specified TTL option', function(done) {
