@@ -306,24 +306,45 @@ function PettyCache(port, host, options) {
 
     this.get = function(key, callback) {
         // Try to get value from memory cache
-        const result = getFromMemoryCache(key);
+        var result = getFromMemoryCache(key);
 
         // Return value from memory cache if it exists
         if (result.exists) {
             return callback(null, result.value);
         }
 
-        getFromRedis(key, function(err, result) {
-            if (err) {
-                return callback(err);
-            }
+        // Double-checked locking: http://en.wikipedia.org/wiki/Double-checked_locking
+        lock(key, function(release) {
+            result = getFromMemoryCache(key);
 
-            if (!result.exists) {
-                return callback(null, null);
-            }
+            async.reflect(function(callback) {
+                // Try to get value from memory cache
+                result = getFromMemoryCache(key);
 
-            memoryCache.put(key, result.value, random(2000, 5000));
-            callback(null, result.value);
+                // Return value from memory cache if it exists
+                if (result.exists) {
+                    return callback(null, result.value);
+                }
+
+                getFromRedis(key, function(err, result) {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    if (!result.exists) {
+                        return callback(null, null);
+                    }
+
+                    memoryCache.put(key, result.value, random(2000, 5000));
+                    callback(null, result.value);
+                });
+            })(release(function(err, result) {
+                if (result.error) {
+                    return callback(result.error);
+                }
+
+                callback(null, result.value);
+            }));
         });
     };
 
