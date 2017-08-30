@@ -1557,7 +1557,7 @@ describe('Benchmark', function() {
         redisClient.psetex(redisKey, 30000, JSON.stringify(emojis), function(err) {
             assert.ifError(err);
 
-            async.times(1000, function(n, callback) {
+            async.times(500, function(n, callback) {
                 redisClient.get(redisKey, function(err, data) {
                     if (err) {
                         return callback(err);
@@ -1573,7 +1573,7 @@ describe('Benchmark', function() {
                 pettyCache.set(pettyCacheKey, emojis, function(err) {
                     assert.ifError(err);
 
-                    async.times(1000, function(n, callback) {
+                    async.times(500, function(n, callback) {
                         pettyCache.get(pettyCacheKey, function(err, data) {
                             if (err) {
                                 return callback(err);
