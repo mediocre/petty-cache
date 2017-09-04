@@ -251,56 +251,79 @@ function PettyCache(port, host, options) {
 
         const _this = this;
 
-        // Try to get value from Redis
-        getFromRedis(key, function(err, result) {
-            if (err) {
-                return callback(err);
-            }
-
-            // Return value from Redis if it exists
-            if (result.exists) {
-                memoryCache.put(key, result.value, random(2000, 5000));
-                return callback(null, result.value);
-            }
-
-            // Double-checked locking: http://en.wikipedia.org/wiki/Double-checked_locking
-            lock(key, function(release) {
+        // Double-checked locking: http://en.wikipedia.org/wiki/Double-checked_locking
+        lock(`fetch-memory-cache-lock-${key}`, function(releaseMemoryCacheLock) {
+            async.reflect(function(callback) {
                 // Try to get value from memory cache
                 result = getFromMemoryCache(key);
 
                 // Return value from memory cache if it exists
                 if (result.exists) {
-                    release()();
                     return callback(null, result.value);
                 }
 
                 // Try to get value from Redis
                 getFromRedis(key, function(err, result) {
                     if (err) {
-                        release()();
                         return callback(err);
                     }
 
                     // Return value from Redis if it exists
                     if (result.exists) {
                         memoryCache.put(key, result.value, random(2000, 5000));
-                        release()();
                         return callback(null, result.value);
                     }
 
-                    // Execute the specified function and place the results in cache before returning the data
-                    func(function(err, data) {
-                        if (err) {
-                            release()();
-                            return callback(err);
-                        }
+                    // Double-checked locking: http://en.wikipedia.org/wiki/Double-checked_locking
+                    lock(`fetch-redis-lock-${key}`, function(releaseRedisLock) {
+                        async.reflect(function(callback) {
+                            // Try to get value from memory cache
+                            result = getFromMemoryCache(key);
 
-                        _this.set(key, data, options, release(function(err) {
-                            callback(err, data);
+                            // Return value from memory cache if it exists
+                            if (result.exists) {
+                                return callback(null, result.value);
+                            }
+
+                            // Try to get value from Redis
+                            getFromRedis(key, function(err, result) {
+                                if (err) {
+                                    return callback(err);
+                                }
+
+                                // Return value from Redis if it exists
+                                if (result.exists) {
+                                    memoryCache.put(key, result.value, random(2000, 5000));
+                                    return callback(null, result.value);
+                                }
+
+                                // Execute the specified function and place the results in cache before returning the data
+                                func(function(err, data) {
+                                    if (err) {
+                                        return callback(err);
+                                    }
+
+                                    _this.set(key, data, options, function(err) {
+                                        callback(err, data);
+                                    });
+                                });
+                            });
+                        })(releaseRedisLock(function(err, result) {
+                            if (result.error) {
+                                return callback(result.error);
+                            }
+
+                            callback(null, result.value);
                         }));
                     });
                 });
-            });
+            })(releaseMemoryCacheLock(function(err, result) {
+                if (result.error) {
+                    return callback(result.error);
+                }
+
+                callback(null, result.value);
+            }));
         });
     };
 
@@ -314,9 +337,7 @@ function PettyCache(port, host, options) {
         }
 
         // Double-checked locking: http://en.wikipedia.org/wiki/Double-checked_locking
-        lock(key, function(release) {
-            result = getFromMemoryCache(key);
-
+        lock(`get-memory-cache-lock-${key}`, function(releaseMemoryCacheLock) {
             async.reflect(function(callback) {
                 // Try to get value from memory cache
                 result = getFromMemoryCache(key);
@@ -338,7 +359,7 @@ function PettyCache(port, host, options) {
                     memoryCache.put(key, result.value, random(2000, 5000));
                     callback(null, result.value);
                 });
-            })(release(function(err, result) {
+            })(releaseMemoryCacheLock(function(err, result) {
                 if (result.error) {
                     return callback(result.error);
                 }

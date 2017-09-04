@@ -655,6 +655,47 @@ describe('PettyCache.fetch', function() {
         });
     });
 
+    it('PettyCache.fetch should lock around Redis', function(done) {
+        redisClient.info('commandstats', function(err, info) {
+            var lineBefore = info.split('\n').find(i => i.startsWith('cmdstat_get:'));
+            var tokenBefore = lineBefore.split(/:|,/).find(i => i.startsWith('calls='));
+            var callsBefore = parseInt(tokenBefore.split('=')[1]);
+
+            var key = Math.random().toString();
+            var numberOfFuncCalls = 0;
+
+            var func = function(callback) {
+                setTimeout(function() {
+                    callback(null, ++numberOfFuncCalls);
+                }, 100);
+            };
+
+            pettyCache.fetch(key, func, function() {});
+            pettyCache.fetch(key, func, function() {});
+            pettyCache.fetch(key, func, function() {});
+            pettyCache.fetch(key, func, function() {});
+            pettyCache.fetch(key, func, function() {});
+            pettyCache.fetch(key, func, function() {});
+            pettyCache.fetch(key, func, function() {});
+            pettyCache.fetch(key, func, function() {});
+            pettyCache.fetch(key, func, function() {});
+
+            pettyCache.fetch(key, func, function(err, data) {
+                assert.equal(data, 1);
+
+                redisClient.info('commandstats', function(err, info) {
+                    var lineAfter = info.split('\n').find(i => i.startsWith('cmdstat_get:'));
+                    var tokenAfter = lineAfter.split(/:|,/).find(i => i.startsWith('calls='));
+                    var callsAfter = parseInt(tokenAfter.split('=')[1]);
+
+                    assert.strictEqual(callsBefore + 2, callsAfter);
+
+                    done();
+                });
+            });
+        });
+    });
+
     it('PettyCache.fetch should return error if func returns error', function(done) {
         pettyCache.fetch(Math.random().toString(), function(callback) {
             callback(new Error('PettyCache.fetch should return error if func returns error'));
