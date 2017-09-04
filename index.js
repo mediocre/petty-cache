@@ -9,11 +9,6 @@ function PettyCache(port, host, options) {
     redisClient.on('error', err => console.warn(`Warning: Redis reported a client error: ${err}`));
 
     function bulkGetFromRedis(keys, callback) {
-        // If there aren't any keys, return
-        if (!keys.length) {
-            return callback(null, {});
-        }
-
         // Try to get values from Redis
         redisClient.mget(keys, function(err, data) {
             if (err) {
