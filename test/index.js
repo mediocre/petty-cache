@@ -218,7 +218,7 @@ describe('PettyCache.bulkFetch', function() {
         });
     });
 
-    it('PettyCache.bulkFetch should return error from Redis', function(done) {
+    it.skip('PettyCache.bulkFetch should return error from Redis', function(done) {
         this.timeout(20000);
 
         var key = Math.random().toString();
@@ -408,7 +408,7 @@ describe('PettyCache.bulkGet', function() {
         });
     });
 
-    it('PettyCache.bulkGet should return error from Redis', function(done) {
+    it.skip('PettyCache.bulkGet should return error from Redis', function(done) {
         this.timeout(20000);
 
         var key = Math.random().toString();
@@ -558,7 +558,7 @@ describe('PettyCache.del', function() {
         });
     });
 
-    it('PettyCache.del should return error from Redis', function(done) {
+    it.skip('PettyCache.del should return error from Redis', function(done) {
         this.timeout(20000);
 
         var key = Math.random().toString();
@@ -764,7 +764,7 @@ describe('PettyCache.fetch', function() {
         });
     });
 
-    it('PettyCache.fetch should return error from Redis', function(done) {
+    it.skip('PettyCache.fetch should return error from Redis', function(done) {
         this.timeout(20000);
 
         var key = Math.random().toString();
@@ -820,7 +820,7 @@ describe('PettyCache.get', function() {
         });
     });
 
-    it('PettyCache.get should return error from Redis', function(done) {
+    it.skip('PettyCache.get should return error from Redis', function(done) {
         this.timeout(20000);
 
         var key = Math.random().toString();
@@ -972,7 +972,7 @@ describe('PettyCache.patch', function() {
         });
     });
 
-    it('PettyCache.patch should return error from Redis', function(done) {
+    it.skip('PettyCache.patch should return error from Redis', function(done) {
         this.timeout(20000);
 
         var key = Math.random().toString();
