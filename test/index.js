@@ -529,6 +529,57 @@ describe('PettyCache.bulkSet', function() {
             });
         });
     });
+
+    it('PettyCache.bulkSet should set values with the specified TTL option using max and min', function(done) {
+        this.timeout(10000);
+
+        var key1 = Math.random().toString();
+        var key2 = Math.random().toString();
+        var key3 = Math.random().toString();
+        var values = {};
+
+        values[key1] = '1';
+        values[key2] = 2;
+        values[key3] = '3';
+
+        pettyCache.bulkSet(values, { ttl: { max: 7000, min: 6000 } }, function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key1, function(err, value) {
+                assert.ifError(err);
+                assert.strictEqual(value, '1');
+
+                pettyCache.get(key2, function(err, value) {
+                    assert.ifError(err);
+                    assert.strictEqual(value, 2);
+
+                    pettyCache.get(key3, function(err, value) {
+                        assert.ifError(err);
+                        assert.strictEqual(value, '3');
+
+                        // Wait for Redis cache to expire
+                        setTimeout(function() {
+                            pettyCache.get(key1, function(err, value) {
+                                assert.ifError(err);
+                                assert.strictEqual(value, null);
+
+                                pettyCache.get(key2, function(err, value) {
+                                    assert.ifError(err);
+                                    assert.strictEqual(value, null);
+
+                                    pettyCache.get(key3, function(err, value) {
+                                        assert.ifError(err);
+                                        assert.strictEqual(value, null);
+                                        done();
+                                    });
+                                });
+                            });
+                        }, 7001);
+                    });
+                });
+            });
+        });
+    });
 });
 
 describe('PettyCache.del', function() {

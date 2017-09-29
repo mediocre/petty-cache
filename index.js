@@ -203,8 +203,29 @@ function PettyCache(port, host, options) {
             // Store value in memory cache with a short expiration
             memoryCache.put(key, value, random(2000, 5000));
 
+            // Default TTL is 30-60 seconds
+            var ttl = {
+                max: 60000,
+                min: 30000
+            };
+
+            if (options.hasOwnProperty('ttl')) {
+                if (typeof options.ttl === 'number') {
+                    ttl.max = options.ttl;
+                    ttl.min = options.ttl;
+                } else {
+                    if (options.ttl.hasOwnProperty('max')) {
+                        ttl.max = options.ttl.max;
+                    }
+
+                    if (options.ttl.hasOwnProperty('min')) {
+                        ttl.min = options.ttl.min;
+                    }
+                }
+            }
+
             // Add Redis command
-            batch.psetex(key, options.ttl || random(30000, 60000), PettyCache.stringify(value));
+            batch.psetex(key, random(ttl.min, ttl.max), PettyCache.stringify(value));
         });
 
         batch.exec(function(err) {
