@@ -730,8 +730,29 @@ function PettyCache(port, host, options) {
         // Store value in memory cache with a short expiration
         memoryCache.put(key, value, random(2000, 5000));
 
+        // Default TTL is 30-60 seconds
+        var ttl = {
+            max: 60000,
+            min: 30000
+        };
+
+        if (options.hasOwnProperty('ttl')) {
+            if (typeof options.ttl === 'number') {
+                ttl.max = options.ttl;
+                ttl.min = options.ttl;
+            } else {
+                if (options.ttl.hasOwnProperty('max')) {
+                    ttl.max = options.ttl.max;
+                }
+
+                if (options.ttl.hasOwnProperty('min')) {
+                    ttl.min = options.ttl.min;
+                }
+            }
+        }
+
         // Store value is Redis
-        redisClient.psetex(key, options.ttl || random(30000, 60000), PettyCache.stringify(value), callback);
+        redisClient.psetex(key, random(ttl.min, ttl.max), PettyCache.stringify(value), callback);
     };
 
     // Semaphore functions need to be bound to the main PettyCache object
@@ -741,6 +762,10 @@ function PettyCache(port, host, options) {
 }
 
 function random(min, max) {
+    if (min === max) {
+        return min;
+    }
+
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 

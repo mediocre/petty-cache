@@ -1304,7 +1304,7 @@ describe('PettyCache.set', function() {
         });
     });
 
-    it('PettyCache.set work without a callback', function(done) {
+    it('PettyCache.set should work without a callback', function(done) {
         pettyCache.set(Math.random().toString(), 'hello world');
         done();
     });
@@ -1325,6 +1325,33 @@ describe('PettyCache.set', function() {
                         done();
                     });
                 }, 6001);
+            });
+        });
+    });
+
+    it('PettyCache.set should set a value with the specified TTL option using max and min', function(done) {
+        this.timeout(10000);
+
+        var key = Math.random().toString();
+
+        pettyCache.set(key, 'hello world', { ttl: { max: 7000, min: 6000 } },function() {
+            pettyCache.get(key, function(err, value) {
+                assert.strictEqual(value, 'hello world');
+
+                // Get again before cache expires
+                setTimeout(function() {
+                    pettyCache.get(key, function(err, value) {
+                        assert.strictEqual(value, 'hello world');
+
+                        // Wait for memory cache to expire
+                        setTimeout(function() {
+                            pettyCache.get(key, function(err, value) {
+                                assert.strictEqual(value, null);
+                                done();
+                            });
+                        }, 6001);
+                    });
+                }, 1000);
             });
         });
     });
