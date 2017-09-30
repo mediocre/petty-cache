@@ -1105,6 +1105,27 @@ describe('PettyCache.semaphore', function() {
                 });
             });
         });
+
+        it('should aquire a lock with specified options', function(done) {
+            this.timeout(5000);
+
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 10 }, function(err) {
+                assert.ifError(err);
+
+                // callback is optional
+                pettyCache.semaphore.acquireLock(key, { retry: { interval: 500, times: 10 }, ttl: 500 });
+
+                setTimeout(function() {
+                    pettyCache.semaphore.acquireLock(key, { retry: { interval: 500, times: 10 }, ttl: 500 }, function(err, index) {
+                        assert.ifError(err);
+                        assert.equal(index, 1);
+                        done();
+                    });
+                }, 1000);
+            });
+        });
     });
 
     describe('PettyCache.semaphore.consumeLock', function() {
