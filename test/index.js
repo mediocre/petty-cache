@@ -1163,7 +1163,7 @@ describe('PettyCache.semaphore', function() {
                 assert.ifError(err);
 
                 // callback is optional
-                pettyCache.semaphore.acquireLock(key, { retry: { interval: 500, times: 10 }, ttl: 500 });
+                pettyCache.semaphore.acquireLock(key);
 
                 setTimeout(function() {
                     pettyCache.semaphore.acquireLock(key, { retry: { interval: 500, times: 10 }, ttl: 500 }, function(err, index) {
