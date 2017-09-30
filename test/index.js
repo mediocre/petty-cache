@@ -1174,6 +1174,16 @@ describe('PettyCache.semaphore', function() {
                 }, 1000);
             });
         });
+
+        it('should fail if the semaphore does not exist', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.acquireLock(key, 0, function(err) {
+                assert(err);
+                assert.strictEqual(err.message, `Semaphore ${key} doesn't exist.`);
+                done();
+            });
+        });
     });
 
     describe('PettyCache.semaphore.consumeLock', function() {
@@ -1239,6 +1249,35 @@ describe('PettyCache.semaphore', function() {
                                 });
                             });
                         });
+                    });
+                });
+            });
+        });
+
+        it('should fail if the semaphore does not exist', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.consumeLock(key, 0, function(err) {
+                assert(err);
+                assert.strictEqual(err.message, `Semaphore ${key} doesn't exist.`);
+                done();
+            });
+        });
+
+        it('should fail if index is larger than semaphore', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquireLock(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.consumeLock(key, 10, function(err) {
+                        assert(err);
+                        assert.strictEqual(err.message, `Index 10 for semaphore ${key} is invalid.`);
+                        done();
                     });
                 });
             });
@@ -1343,6 +1382,16 @@ describe('PettyCache.semaphore', function() {
                 });
             });
         });
+
+        it('should fail if the semaphore does not exist', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.expand(key, 10, function(err) {
+                assert(err);
+                assert.strictEqual(err.message, `Semaphore ${key} doesn't exist.`);
+                done();
+            });
+        });
     });
 
     describe('PettyCache.semaphore.releaseLock', function() {
@@ -1416,6 +1465,16 @@ describe('PettyCache.semaphore', function() {
                 });
             });
         });
+
+        it('should fail if the semaphore does not exist', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.releaseLock(key, 10, function(err) {
+                assert(err);
+                assert.strictEqual(err.message, `Semaphore ${key} doesn't exist.`);
+                done();
+            });
+        });
     });
 
     describe('PettyCache.semaphore.reset', function() {
@@ -1478,6 +1537,16 @@ describe('PettyCache.semaphore', function() {
                         });
                     });
                 });
+            });
+        });
+
+        it('should fail if the semaphore does not exist', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.reset(key, function(err) {
+                assert(err);
+                assert.strictEqual(err.message, `Semaphore ${key} doesn't exist.`);
+                done();
             });
         });
     });
