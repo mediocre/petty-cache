@@ -1373,6 +1373,25 @@ describe('PettyCache.semaphore', function() {
             });
         });
 
+        it('should fail to release a lock outside of the semaphore size', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquireLock(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.releaseLock(key, 10, function(err) {
+                        assert(err);
+                        assert.strictEqual(err.message, `Index 10 for semaphore ${key} is invalid.`);
+                        done();
+                    });
+                });
+            });
+        });
+
         it('callback is optional', function(done) {
             var key = Math.random().toString();
 
