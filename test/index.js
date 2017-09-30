@@ -580,6 +580,54 @@ describe('PettyCache.bulkSet', function() {
             });
         });
     });
+
+    it('PettyCache.bulkSet should set values with the specified TTL option using max only', function(done) {
+        this.timeout(10000);
+
+        var key1 = Math.random().toString();
+        var key2 = Math.random().toString();
+        var key3 = Math.random().toString();
+        var values = {};
+
+        values[key1] = '1';
+        values[key2] = 2;
+        values[key3] = '3';
+
+        pettyCache.bulkSet(values, { ttl: { max: 10000 } }, function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key1, function(err, value) {
+                assert.ifError(err);
+                assert.strictEqual(value, '1');
+
+                done();
+            });
+        });
+    });
+
+    it('PettyCache.bulkSet should set values with the specified TTL option using min only', function(done) {
+        this.timeout(10000);
+
+        var key1 = Math.random().toString();
+        var key2 = Math.random().toString();
+        var key3 = Math.random().toString();
+        var values = {};
+
+        values[key1] = '1';
+        values[key2] = 2;
+        values[key3] = '3';
+
+        pettyCache.bulkSet(values, { ttl: { min: 6000 } }, function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key1, function(err, value) {
+                assert.ifError(err);
+                assert.strictEqual(value, '1');
+
+                done();
+            });
+        });
+    });
 });
 
 describe('PettyCache.del', function() {
@@ -1424,6 +1472,32 @@ describe('PettyCache.set', function() {
                         }, 6001);
                     });
                 }, 1000);
+            });
+        });
+    });
+
+    it('PettyCache.set should set a value with the specified TTL option using min only', function(done) {
+        this.timeout(10000);
+
+        var key = Math.random().toString();
+
+        pettyCache.set(key, 'hello world', { ttl: { min: 6000 } },function() {
+            pettyCache.get(key, function(err, value) {
+                assert.strictEqual(value, 'hello world');
+                done();
+            });
+        });
+    });
+
+    it('PettyCache.set should set a value with the specified TTL option using max only', function(done) {
+        this.timeout(10000);
+
+        var key = Math.random().toString();
+
+        pettyCache.set(key, 'hello world', { ttl: { max: 10000 } },function() {
+            pettyCache.get(key, function(err, value) {
+                assert.strictEqual(value, 'hello world');
+                done();
             });
         });
     });
