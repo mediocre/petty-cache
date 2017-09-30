@@ -75,9 +75,19 @@ pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
 
 **Options**
 
-```javascript
+```
 {
     ttl: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+}
+```
+
+```
+{
+    // TTL can optional be specified with a range to pick a random value between `min` and `max` (for jitter).
+    ttl: {
+        min: 5000,
+        max: 10000
+    }
 }
 ```
 
@@ -109,9 +119,19 @@ pettyCache.set({ key1: 'one', key2: 2, key3: 'three' }, function(err) {
 
 **Options**
 
-```javascript
+```
 {
     ttl: 30000 // How long it should take for the cache entries to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+}
+```
+
+```
+{
+    // TTL can optional be specified with a range to pick a random value between `min` and `max` (for jitter).
+    ttl: {
+        min: 5000,
+        max: 10000
+    }
 }
 ```
 
@@ -133,9 +153,19 @@ pettyCache.fetch('key', function(callback) {
 
 **Options**
 
-```javascript
+```
 {
     ttl: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+}
+```
+
+```
+{
+    // TTL can optional be specified with a range to pick a random value between `min` and `max` (for jitter).
+    ttl: {
+        min: 5000,
+        max: 10000
+    }
 }
 ```
 
@@ -170,9 +200,19 @@ pettyCache.patch('key', { a: 1 }, function(callback) {
 
 **Options**
 
-```javascript
+```
 {
     ttl: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+}
+```
+
+```
+{
+    // TTL can optional be specified with a range to pick a random value between `min` and `max` (for jitter).
+    ttl: {
+        min: 5000,
+        max: 10000
+    }
 }
 ```
 
@@ -192,9 +232,19 @@ pettyCache.set('key', { a: 'b' }, function(err) {
 
 **Options**
 
-```javascript
+```
 {
     ttl: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+}
+```
+
+```
+{
+    // TTL can optional be specified with a range to pick a random value between `min` and `max` (for jitter).
+    ttl: {
+        min: 5000,
+        max: 10000
+    }
 }
 ```
 
