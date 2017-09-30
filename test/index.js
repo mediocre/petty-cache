@@ -1243,6 +1243,35 @@ describe('PettyCache.semaphore', function() {
                 });
             });
         });
+
+        it('callback is optional', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquireLock(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquireLock(key, function(err, index) {
+                        assert.ifError(err);
+                        assert.equal(index, 1);
+
+                        pettyCache.semaphore.acquireLock(key, function(err) {
+                            assert(err);
+
+                            pettyCache.semaphore.consumeLock(key, 0);
+
+                            pettyCache.semaphore.acquireLock(key, function(err) {
+                                assert(err);
+                                done();
+                            });
+                        });
+                    });
+                });
+            });
+        });
     });
 
     describe('PettyCache.semaphore.expand', function() {
@@ -1278,6 +1307,42 @@ describe('PettyCache.semaphore', function() {
                 });
             });
         });
+
+        it('should succeed if pool size is already equal to the specified size', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err, pool) {
+                assert.ifError(err);
+                assert.strictEqual(pool.length, 2);
+
+                pettyCache.semaphore.expand(key, 2, function(err) {
+                    assert.ifError(err);
+
+                    pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err, pool) {
+                        assert.ifError(err);
+                        assert.strictEqual(pool.length, 2);
+                        done();
+                    });
+                });
+            });
+        });
+
+        it('callback is optional', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err, pool) {
+                assert.ifError(err);
+                assert.strictEqual(pool.length, 2);
+
+                pettyCache.semaphore.expand(key, 3);
+
+                pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err, pool) {
+                    assert.ifError(err);
+                    assert.strictEqual(pool.length, 3);
+                    done();
+                });
+            });
+        });
     });
 
     describe('PettyCache.semaphore.releaseLock', function() {
@@ -1302,6 +1367,31 @@ describe('PettyCache.semaphore', function() {
                                 assert.equal(index, 0);
                                 done();
                             });
+                        });
+                    });
+                });
+            });
+        });
+
+        it('callback is optional', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquireLock(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquireLock(key, function(err) {
+                        assert(err);
+
+                        pettyCache.semaphore.releaseLock(key, 0);
+
+                        pettyCache.semaphore.acquireLock(key, function(err, index) {
+                            assert.ifError(err);
+                            assert.equal(index, 0);
+                            done();
                         });
                     });
                 });
@@ -1335,6 +1425,36 @@ describe('PettyCache.semaphore', function() {
                                     assert.equal(index, 0);
                                     done();
                                 });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
+        it('callback is optional', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err) {
+                assert.ifError(err);
+
+                pettyCache.semaphore.acquireLock(key, function(err, index) {
+                    assert.ifError(err);
+                    assert.equal(index, 0);
+
+                    pettyCache.semaphore.acquireLock(key, function(err, index) {
+                        assert.ifError(err);
+                        assert.equal(index, 1);
+
+                        pettyCache.semaphore.acquireLock(key, function(err) {
+                            assert(err);
+
+                            pettyCache.semaphore.reset(key);
+
+                            pettyCache.semaphore.acquireLock(key, function(err, index) {
+                                assert.ifError(err);
+                                assert.equal(index, 0);
+                                done();
                             });
                         });
                     });
@@ -1398,6 +1518,20 @@ describe('PettyCache.semaphore', function() {
                     assert(semaphore.every(s => s.status === 'available'));
                     done();
                 });
+            });
+        });
+
+        it('callback is optional', function(done) {
+            var key = Math.random().toString();
+
+            pettyCache.semaphore.retrieveOrCreate(key);
+
+            pettyCache.semaphore.retrieveOrCreate(key, { size: 100 }, function(err, semaphore) {
+                assert.ifError(err);
+                assert(semaphore);
+                assert.equal(semaphore.length, 1);
+                assert(semaphore.every(s => s.status === 'available'));
+                done();
             });
         });
     });

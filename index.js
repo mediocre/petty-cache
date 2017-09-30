@@ -1,5 +1,5 @@
 const async = require('async');
-const lock = require('lock')();
+const lock = require('lock').Lock();
 const memoryCache = require('memory-cache');
 const redis = require('redis');
 
