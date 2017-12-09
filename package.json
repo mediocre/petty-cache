@@ -9,7 +9,7 @@
   "devDependencies": {
     "coveralls": "*",
     "istanbul": "*",
-    "mocha": "*"
+    "mocha": "3.x"
   },
   "homepage": "https://github.com/mediocre/petty-cache",
   "keywords": [
