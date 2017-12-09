@@ -1,7 +1,7 @@
 {
   "description": "A cache module for node.js that uses a two-level cache (in-memory cache for recently accessed data plus Redis for distributed caching) with some extra features to avoid cache stampedes and thundering herds.",
   "dependencies": {
-    "async": "2.5.x",
+    "async": "2.6.x",
     "lock": "1.1.x",
     "memory-cache": "0.2.x",
     "redis": "2.8.x"
@@ -33,5 +33,5 @@
   "bugs": {
     "url": "https://github.com/mediocre/petty-cache/issues"
   },
-  "version": "2.3.1"
+  "version": "2.3.2"
 }
