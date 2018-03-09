@@ -23,7 +23,7 @@
   "main": "index.js",
   "name": "petty-cache",
   "scripts": {
-    "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --exit --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
+    "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- --exit --reporter spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "test": "mocha --exit --reporter spec"
   },
   "repository": {
