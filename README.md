@@ -364,6 +364,18 @@ pettyCache.semaphore.consumeLock('key', index, function(err) {
 });
 ```
 
+### pettyCache.semaphore.expand(key, size, [callback])
+
+Expand the number of locks in the specified semaphore's pool.
+
+```javascript
+pettyCache.semaphore.expand(key, 100, function(err) {
+    if (err) {
+        // We weren't able to expand the semaphore.
+    }
+});
+```
+
 ### pettyCache.semaphore.releaseLock(key, index, [callback])
 
 Releases the lock at the specified index back to the semaphore's pool so that it can be used again.

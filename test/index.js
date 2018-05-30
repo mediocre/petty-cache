@@ -1323,6 +1323,7 @@ describe('PettyCache.semaphore', function() {
 
                 pettyCache.semaphore.expand(key, 3, function(err) {
                     assert.ifError(err);
+
                     pettyCache.semaphore.retrieveOrCreate(key, { size: 2 }, function(err, pool) {
                         assert.ifError(err);
                         assert.strictEqual(pool.length, 3);
