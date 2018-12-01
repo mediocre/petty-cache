@@ -999,6 +999,14 @@ describe('PettyCache.fetchAndRefresh', function() {
             }, 4001);
         });
     });
+
+    it('PettyCache.fetchAndRefresh should not require options', function(done) {
+        pettyCache.fetchAndRefresh(Math.random().toString(), function(callback) {
+            return callback(null, { foo: 'bar' });
+        });
+
+        done();
+    });
 });
 
 describe('PettyCache.get', function() {
