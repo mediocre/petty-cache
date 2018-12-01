@@ -24,13 +24,6 @@ Provides a distributed lock (mutex) with the ability to retry a specified number
 **Semaphore**
 Provides a pool of distributed locks with the ability to release a slot back to the pool or remove the slot from the pool so that it's not used again.
 
-## Changes since v1.x
-
-- The `expire` option has been renamed to `ttl`.
-- `PettyCache.lock` (deprecated in v1.4) has now been removed. Use `PettyCache.mutex.lock` instead.
-- Big performance increase with in-memory cache.
-- Falsy values are now serialized and deserialized. You can cache `null`/`undefined` and get `null`/`undefined` back from cache.
-
 ## Getting Started
 
 ```javascript
@@ -147,6 +140,39 @@ pettyCache.fetch('key', function(callback) {
     fs.readFile('file.txt', callback);
 }, function(err, value) {
     // This callback is called once petty-cache has loaded data from cache or executed the specified cache miss function
+    console.log(value);
+});
+```
+
+**Options**
+
+```
+{
+    ttl: 30000 // How long it should take for the cache entry to expire in milliseconds. Defaults to a random value between 30000 and 60000 (for jitter).
+}
+```
+
+```
+{
+    // TTL can optional be specified with a range to pick a random value between `min` and `max` (for jitter).
+    ttl: {
+        min: 5000,
+        max: 10000
+    }
+}
+```
+
+### pettyCache.fetchAndRefresh(key, cacheMissFunction, [options,] callback)
+
+Similar to `pettyCache.fetch` but this method continually refreshes the data in cache by executing the specified cacheMissFunction before the TTL expires. 
+
+**Example**
+
+```javascript
+pettyCache.fetchAndRefresh('key', function(callback) {
+    // This function is called on a cache miss and every TTL/2 milliseconds
+    fs.readFile('file.txt', callback);
+}, function(err, value) {
     console.log(value);
 });
 ```
