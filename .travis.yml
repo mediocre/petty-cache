@@ -1,6 +1,3 @@
-after_success:
-  - npm run coveralls
-
 before_script:
   - npm i -g eslint
   - eslint .
@@ -10,13 +7,15 @@ language: node_js
 node_js:
   - 8
   - 10
-  - 10.1.0
 
 notifications:
   slack:
     rooms:
       - secure: "X0Pzylgg3wWX+04f4Mnl7o5DCFgrYgWZ1qL2LicDmJ2tlrqFx1CemsRV1BLy70MDIWo6DtzrJkP5dCMnpRtJo1w/ehFbbJ0ZHYVS2BKVbzyy2UorPXHaB9hyS2sVswTJP0HDlEgwbkMOrx8jvvKUyWqlcP2U0D3ZlAKpINfY3EM="
     on_success: always
+
+script:
+  - npm run coveralls
 
 services:
   - redis-server
