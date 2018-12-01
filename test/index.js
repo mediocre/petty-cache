@@ -885,6 +885,65 @@ describe('PettyCache.fetch', function() {
     });
 });
 
+describe('PettyCache.fetchAndRefresh', function() {
+    it('PettyCache.fetchAndRefresh', function(done) {
+        this.timeout(7000);
+
+        var key = Math.random().toString();
+
+        pettyCache.fetchAndRefresh(key, function(callback) {
+            return callback(null, { foo: 'bar' });
+        }, function() {
+            pettyCache.fetchAndRefresh(key, function() {
+                throw 'This function should not be called';
+            }, function(err, data) {
+                assert.equal(data.foo, 'bar');
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    pettyCache.fetchAndRefresh(key, function() {
+                        throw 'This function should not be called';
+                    }, function(err, data) {
+                        assert.strictEqual(data.foo, 'bar');
+                        done();
+                    });
+                }, 6000);
+            });
+        });
+    });
+
+    it('PettyCache.fetchAndRefresh should run func again to refresh', function(done) {
+        this.timeout(7000);
+
+        var key = Math.random().toString();
+        var numberOfFuncCalls = 0;
+
+        var func = function(callback) {
+            setTimeout(function() {
+                ++numberOfFuncCalls;
+                callback(null, numberOfFuncCalls);
+            }, 100);
+        };
+
+        pettyCache.fetchAndRefresh(key, func, { ttl: 6000 });
+
+        pettyCache.fetchAndRefresh(key, func, { ttl: 6000 }, function(err, data) {
+            assert.equal(data, 1);
+
+            setTimeout(function() {
+                pettyCache.fetchAndRefresh(key, func, { ttl: 6000 }, function(err, data) {
+                    assert.equal(data, 2);
+
+                    pettyCache.fetchAndRefresh(key, func, { ttl: 6000 }, function(err, data) {
+                        assert.equal(data, 2);
+                        done();
+                    });
+                });
+            }, 4001);
+        });
+    });
+});
+
 describe('PettyCache.get', function() {
     it('PettyCache.get should return value', function(done) {
         this.timeout(7000);

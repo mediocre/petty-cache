@@ -4,6 +4,7 @@ const memoryCache = require('memory-cache');
 const redis = require('redis');
 
 function PettyCache(port, host, options) {
+    const intervals = {};
     const redisClient = redis.createClient(port || 6379, host || '127.0.0.1', options);
 
     redisClient.on('error', err => console.warn(`Warning: Redis reported a client error: ${err}`));
@@ -65,6 +66,31 @@ function PettyCache(port, host, options) {
 
             callback(null, { exists: true, value: PettyCache.parse(data) });
         });
+    }
+
+    function getTtl(options) {
+        // Default TTL is 30-60 seconds
+        var ttl = {
+            max: 60000,
+            min: 30000
+        };
+
+        if (options.hasOwnProperty('ttl')) {
+            if (typeof options.ttl === 'number') {
+                ttl.max = options.ttl;
+                ttl.min = options.ttl;
+            } else {
+                if (options.ttl.hasOwnProperty('max')) {
+                    ttl.max = options.ttl.max;
+                }
+
+                if (options.ttl.hasOwnProperty('min')) {
+                    ttl.min = options.ttl.min;
+                }
+            }
+        }
+
+        return ttl;
     }
 
     /**
@@ -341,6 +367,46 @@ function PettyCache(port, host, options) {
                 callback(null, result.value);
             }));
         });
+    };
+
+    this.fetchAndRefresh = function(key, func, options, callback) {
+        options = options || {};
+
+        if (typeof options === 'function') {
+            callback = options;
+            options = {};
+        }
+
+        // Default callback is a noop
+        callback = callback || function() {};
+
+        options.ttl = getTtl(options);
+
+        const _this = this;
+
+        if (!intervals[key]) {
+            const delay = options.ttl.min / 2;
+
+            intervals[key] = setInterval(function() {
+                // This distributed lock prevents multiple clients from executing func at the same time
+                _this.mutex.lock(`interval-${key}`, { ttl: delay - 100 }, function(err) {
+                    if (err) {
+                        return;
+                    }
+
+                    // Execute the specified function and update cache
+                    func(function(err, data) {
+                        if (err) {
+                            return;
+                        }
+
+                        _this.set(key, data, options);
+                    });
+                });
+            }, delay);
+        }
+
+        this.fetch(key, func, options, callback);
     };
 
     this.get = function(key, callback) {
@@ -751,26 +817,8 @@ function PettyCache(port, host, options) {
         // Store value in memory cache with a short expiration
         memoryCache.put(key, value, random(2000, 5000));
 
-        // Default TTL is 30-60 seconds
-        var ttl = {
-            max: 60000,
-            min: 30000
-        };
-
-        if (options.hasOwnProperty('ttl')) {
-            if (typeof options.ttl === 'number') {
-                ttl.max = options.ttl;
-                ttl.min = options.ttl;
-            } else {
-                if (options.ttl.hasOwnProperty('max')) {
-                    ttl.max = options.ttl.max;
-                }
-
-                if (options.ttl.hasOwnProperty('min')) {
-                    ttl.min = options.ttl.min;
-                }
-            }
-        }
+        // Get TTL based on specified options
+        const ttl = getTtl(options);
 
         // Store value is Redis
         redisClient.psetex(key, random(ttl.min, ttl.max), PettyCache.stringify(value), callback);
