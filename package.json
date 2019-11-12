@@ -1,10 +1,10 @@
 {
   "description": "A cache module for node.js that uses a two-level cache (in-memory cache for recently accessed data plus Redis for distributed caching) with some extra features to avoid cache stampedes and thundering herds.",
   "dependencies": {
-    "async": "2.6.x",
-    "lock": "1.1.x",
-    "memory-cache": "0.2.x",
-    "redis": "2.8.x"
+    "async": "^3.1.0",
+    "lock": "^1.1.0",
+    "memory-cache": "^0.2.0",
+    "redis": "^2.8.0"
   },
   "devDependencies": {
     "coveralls": "*",
