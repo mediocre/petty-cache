@@ -75,16 +75,16 @@ function PettyCache(port, host, options) {
             min: 30000
         };
 
-        if (options.hasOwnProperty('ttl')) {
+        if (Object.prototype.hasOwnProperty.call(options, 'ttl')) {
             if (typeof options.ttl === 'number') {
                 ttl.max = options.ttl;
                 ttl.min = options.ttl;
             } else {
-                if (options.ttl.hasOwnProperty('max')) {
+                if (Object.prototype.hasOwnProperty.call(options.ttl, 'max')) {
                     ttl.max = options.ttl.max;
                 }
 
-                if (options.ttl.hasOwnProperty('min')) {
+                if (Object.prototype.hasOwnProperty.call(options.ttl, 'min')) {
                     ttl.min = options.ttl.min;
                 }
             }
@@ -235,16 +235,16 @@ function PettyCache(port, host, options) {
                 min: 30000
             };
 
-            if (options.hasOwnProperty('ttl')) {
+            if (Object.prototype.hasOwnProperty.call(options, 'ttl')) {
                 if (typeof options.ttl === 'number') {
                     ttl.max = options.ttl;
                     ttl.min = options.ttl;
                 } else {
-                    if (options.ttl.hasOwnProperty('max')) {
+                    if (Object.prototype.hasOwnProperty.call(options.ttl, 'max')) {
                         ttl.max = options.ttl.max;
                     }
 
-                    if (options.ttl.hasOwnProperty('min')) {
+                    if (Object.prototype.hasOwnProperty.call(options.ttl, 'min')) {
                         ttl.min = options.ttl.min;
                     }
                 }
@@ -462,10 +462,10 @@ function PettyCache(port, host, options) {
             callback = callback || function() {};
             options = options || {};
 
-            options.retry = options.hasOwnProperty('retry') ? options.retry : {};
-            options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 100;
-            options.retry.times = options.retry.hasOwnProperty('times') ? options.retry.times : 1;
-            options.ttl = options.hasOwnProperty('ttl') ? options.ttl : 1000;
+            options.retry = Object.prototype.hasOwnProperty.call(options, 'retry') ? options.retry : {};
+            options.retry.interval = Object.prototype.hasOwnProperty.call(options.retry, 'interval') ? options.retry.interval : 100;
+            options.retry.times = Object.prototype.hasOwnProperty.call(options.retry, 'times') ? options.retry.times : 1;
+            options.ttl = Object.prototype.hasOwnProperty.call(options, 'ttl') ? options.ttl : 1000;
 
             async.retry({ interval: options.retry.interval, times: options.retry.times }, function(callback) {
                 redisClient.set(key, '1', 'NX', 'PX', options.ttl, function(err, res) {
@@ -526,10 +526,10 @@ function PettyCache(port, host, options) {
 
             options = options || {};
 
-            options.retry = options.hasOwnProperty('retry') ? options.retry : {};
-            options.retry.interval = options.retry.hasOwnProperty('interval') ? options.retry.interval : 100;
-            options.retry.times = options.retry.hasOwnProperty('times') ? options.retry.times : 1;
-            options.ttl = options.hasOwnProperty('ttl') ? options.ttl : 1000;
+            options.retry = Object.prototype.hasOwnProperty.call(options, 'retry') ? options.retry : {};
+            options.retry.interval = Object.prototype.hasOwnProperty.call(options.retry, 'interval') ? options.retry.interval : 100;
+            options.retry.times = Object.prototype.hasOwnProperty.call(options.retry, 'times') ? options.retry.times : 1;
+            options.ttl = Object.prototype.hasOwnProperty.call(options, 'ttl') ? options.ttl : 1000;
 
             const _this = this;
 
@@ -779,7 +779,7 @@ function PettyCache(port, host, options) {
                             return options.size(callback);
                         }
 
-                        callback(null, options.hasOwnProperty('size') ? options.size : 1);
+                        callback(null, Object.prototype.hasOwnProperty.call(options, 'size') ? options.size : 1);
                     };
 
                     getSize(function(err, size) {
