@@ -6,8 +6,8 @@ const redis = require('redis');
 
 const PettyCache = require('../index.js');
 
-const pettyCache = new PettyCache();
-var redisClient = redis.createClient();
+const redisClient = redis.createClient();
+const pettyCache = new PettyCache(redisClient);
 
 describe('memory-cache', function() {
     it('memoryCache.put(key, \'\')', function(done) {
@@ -956,7 +956,7 @@ describe('PettyCache.fetchAndRefresh', function() {
 
         pettyCache.fetchAndRefresh(key, func, { ttl: 6000 });
 
-        const pettyCache2 = new PettyCache();
+        const pettyCache2 = new PettyCache(redisClient);
 
         pettyCache2.fetchAndRefresh(key, func, { ttl: 6000 }, function(err, data) {
             assert.equal(data, 1);
