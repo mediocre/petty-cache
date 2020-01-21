@@ -3,14 +3,14 @@ const lock = require('lock').Lock();
 const memoryCache = require('memory-cache');
 const redis = require('redis');
 
-function PettyCache(options) {
+function PettyCache() {
     const intervals = {};
     let redisClient;
 
-    if (options instanceof redis.RedisClient) {
-        redisClient = options;
+    if (arguments[0] instanceof redis.RedisClient) {
+        redisClient = arguments[0];
     } else {
-        redisClient = redis.createClient(options);
+        redisClient = redis.createClient(arguments);
     }
 
     redisClient.on('error', err => console.warn(`Warning: Redis reported a client error: ${err}`));

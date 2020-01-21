@@ -9,6 +9,90 @@ const PettyCache = require('../index.js');
 const redisClient = redis.createClient();
 const pettyCache = new PettyCache(redisClient);
 
+describe('new PettyCache()', function() {
+    it('new PettyCache()', function(done) {
+        this.timeout(7000);
+
+        const key = Math.random().toString();
+        const newPettyCache = new PettyCache();
+
+        newPettyCache.fetch(key, function(callback) {
+            return callback(null, { foo: 'bar' });
+        }, function() {
+            newPettyCache.fetch(key, function() {
+                throw 'This function should not be called';
+            }, function(err, data) {
+                assert.equal(data.foo, 'bar');
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    newPettyCache.fetch(key, function() {
+                        throw 'This function should not be called';
+                    }, function(err, data) {
+                        assert.strictEqual(data.foo, 'bar');
+                        done();
+                    });
+                }, 6000);
+            });
+        });
+    });
+
+    it('new PettyCache(port, host)', function(done) {
+        this.timeout(7000);
+
+        const key = Math.random().toString();
+        const newPettyCache = new PettyCache(6379, 'localhost');
+
+        newPettyCache.fetch(key, function(callback) {
+            return callback(null, { foo: 'bar' });
+        }, function() {
+            newPettyCache.fetch(key, function() {
+                throw 'This function should not be called';
+            }, function(err, data) {
+                assert.equal(data.foo, 'bar');
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    newPettyCache.fetch(key, function() {
+                        throw 'This function should not be called';
+                    }, function(err, data) {
+                        assert.strictEqual(data.foo, 'bar');
+                        done();
+                    });
+                }, 6000);
+            });
+        });
+    });
+
+    it('new PettyCache(redisClient)', function(done) {
+        this.timeout(7000);
+
+        const key = Math.random().toString();
+        const redisClient = redis.createClient();
+        const newPettyCache = new PettyCache(redisClient);
+
+        newPettyCache.fetch(key, function(callback) {
+            return callback(null, { foo: 'bar' });
+        }, function() {
+            newPettyCache.fetch(key, function() {
+                throw 'This function should not be called';
+            }, function(err, data) {
+                assert.equal(data.foo, 'bar');
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    newPettyCache.fetch(key, function() {
+                        throw 'This function should not be called';
+                    }, function(err, data) {
+                        assert.strictEqual(data.foo, 'bar');
+                        done();
+                    });
+                }, 6000);
+            });
+        });
+    });
+});
+
 describe('memory-cache', function() {
     it('memoryCache.put(key, \'\')', function(done) {
         var key = Math.random().toString();

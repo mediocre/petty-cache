@@ -45,7 +45,22 @@ pettyCache.fetch('key', function(callback) {
 
 ### new PettyCache([port, [host, [options]]])
 
-Creates a new petty-cache client. `port`, `host`, and `options` are passed directly to [redis.createClient()](https://www.npmjs.org/package/redis#redis-createclient-).
+Creates a new petty-cache client. `port`, `host`, and `options` are passed directly to [redis.createClient()](https://www.npmjs.com/package/redis#rediscreateclient).
+
+**Example**
+```javascript
+const pettyCache = new PettyCache(6379, 'localhost', { auth_pass: 'secret' });
+```
+
+### new PettyCache(RedisClient)
+
+Alternatively, you can inject your own [RedisClient](https://www.npmjs.com/package/redis) into Petty Cache.
+
+**Example**
+```javascript
+const redisClient = redis.createClient();
+const pettyCache = new PettyCache(redisClient);
+```
 
 ### pettyCache.bulkFetch(keys, cacheMissFunction, [options,] callback)
 
