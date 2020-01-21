@@ -217,27 +217,6 @@ describe('PettyCache.bulkFetch', function() {
             done();
         });
     });
-
-    it.skip('PettyCache.bulkFetch should return error from Redis', function(done) {
-        this.timeout(20000);
-
-        var key = Math.random().toString();
-
-        redisClient.debug('SEGFAULT', function() {
-            pettyCache.bulkFetch([key], function(keys, callback) {
-                assert.fail('func should not have been called');
-                callback();
-            }, function(err) {
-                assert(err);
-
-                // Give Redis a bit to recover from SEGFAULT
-                setTimeout(function() {
-                    redisClient = redis.createClient();
-                    redisClient.ping(done);
-                }, 10000);
-            });
-        });
-    });
 });
 
 describe('PettyCache.bulkGet', function() {
@@ -405,24 +384,6 @@ describe('PettyCache.bulkGet', function() {
             assert.ifError(err);
             assert.deepEqual(values, {});
             done();
-        });
-    });
-
-    it.skip('PettyCache.bulkGet should return error from Redis', function(done) {
-        this.timeout(20000);
-
-        var key = Math.random().toString();
-
-        redisClient.debug('SEGFAULT', function() {
-            pettyCache.bulkGet([key], function(err) {
-                assert(err);
-
-                // Give Redis a bit to recover from SEGFAULT
-                setTimeout(function() {
-                    redisClient = redis.createClient();
-                    redisClient.ping(done);
-                }, 10000);
-            });
         });
     });
 });
@@ -656,24 +617,6 @@ describe('PettyCache.del', function() {
             });
         });
     });
-
-    it.skip('PettyCache.del should return error from Redis', function(done) {
-        this.timeout(20000);
-
-        var key = Math.random().toString();
-
-        redisClient.debug('SEGFAULT', function() {
-            pettyCache.del(key, function(err) {
-                assert(err);
-
-                // Give Redis a bit to recover from SEGFAULT
-                setTimeout(function() {
-                    redisClient = redis.createClient();
-                    redisClient.ping(done);
-                }, 10000);
-            });
-        });
-    });
 });
 
 describe('PettyCache.fetch', function() {
@@ -862,27 +805,6 @@ describe('PettyCache.fetch', function() {
             done();
         });
     });
-
-    it.skip('PettyCache.fetch should return error from Redis', function(done) {
-        this.timeout(20000);
-
-        var key = Math.random().toString();
-
-        redisClient.debug('SEGFAULT', function() {
-            pettyCache.fetch(key, function(callback) {
-                assert.fail('func should not have been called');
-                callback();
-            }, function(err) {
-                assert(err);
-
-                // Give Redis a bit to recover from SEGFAULT
-                setTimeout(function() {
-                    redisClient = redis.createClient();
-                    redisClient.ping(done);
-                }, 10000);
-            });
-        });
-    });
 });
 
 describe('PettyCache.fetchAndRefresh', function() {
@@ -1042,24 +964,6 @@ describe('PettyCache.get', function() {
             });
         });
     });
-
-    it.skip('PettyCache.get should return error from Redis', function(done) {
-        this.timeout(20000);
-
-        var key = Math.random().toString();
-
-        redisClient.debug('SEGFAULT', function() {
-            pettyCache.get(key, function(err) {
-                assert(err);
-
-                // Give Redis a bit to recover from SEGFAULT
-                setTimeout(function() {
-                    redisClient = redis.createClient();
-                    redisClient.ping(done);
-                }, 10000);
-            });
-        });
-    });
 });
 
 describe('PettyCache.mutex', function() {
@@ -1191,24 +1095,6 @@ describe('PettyCache.patch', function() {
                 assert(!err, 'Error: ' + err);
                 assert.deepEqual(data, { a: 1, b: 5, c: 6 });
                 done();
-            });
-        });
-    });
-
-    it.skip('PettyCache.patch should return error from Redis', function(done) {
-        this.timeout(20000);
-
-        var key = Math.random().toString();
-
-        redisClient.debug('SEGFAULT', function() {
-            pettyCache.patch(key, { b: 6, c: 7 }, function(err) {
-                assert(err);
-
-                // Give Redis a bit to recover from SEGFAULT
-                setTimeout(function() {
-                    redisClient = redis.createClient();
-                    redisClient.ping(done);
-                }, 10000);
             });
         });
     });
