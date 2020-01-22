@@ -10,7 +10,7 @@ function PettyCache() {
     if (arguments[0] instanceof redis.RedisClient) {
         redisClient = arguments[0];
     } else {
-        redisClient = redis.createClient(arguments);
+        redisClient = redis.createClient(...arguments);
     }
 
     redisClient.on('error', err => console.warn(`Warning: Redis reported a client error: ${err}`));
