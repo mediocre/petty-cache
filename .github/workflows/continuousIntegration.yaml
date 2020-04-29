@@ -1,0 +1,76 @@
+name: build
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [8, 10, 12.13.0, 13]
+    
+    steps:
+    - name: Setup Node ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Checkout from Git
+      uses: actions/checkout@v2
+      with:
+        persist-credentials: false
+        ssh-key: ${{ secrets.MERCATALYST_DEPLOY_KEY }}
+
+    - name: Install ESLint and Mocha
+      run: npm install -g eslint mocha
+
+    - name: Run ESLint
+      run: eslint .
+
+    - name: Run npm install
+      run: npm install
+
+    - name: Run tests
+      run: npm test
+
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Setup Node 12.13.0
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12.13.0
+
+    - name: Checkout from Git
+      uses: actions/checkout@v2
+      with:
+        persist-credentials: false
+        ssh-key: ${{ secrets.MERCATALYST_DEPLOY_KEY }}
+
+    - name: Run npm install
+      run: npm install
+
+    - name: Run coverage report
+      run: npm run coveralls
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+
+  notify:
+    needs: [test, coverage]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Notify Slack
+      uses: homoluctus/slatify@master
+      with:
+        type: ${{ job.status }}
+        job_name: '${{ github.repository }} - Tests '
+        channel: '#development'
+        url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        commit: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+        icon_emoji: ':mediocrebot:'
+        username: 'mediocrebot'
