@@ -8,8 +8,8 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [8, 10, 12.13.0, 13]
-        redis-version: [4]
+        node-version: [12.18.4, 14.13.0]
+        redis-version: [4.0.4]
     
     steps:
     - name: Setup Node ${{ matrix.node-version }}
