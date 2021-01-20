@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         node-version: [12.19.0, 14.15.0]
-        redis-version: [4.0.14, 6.0.10]
+        redis-version: [4.0.14]
     
     steps:
     - name: Setup Node ${{ matrix.node-version }}
