@@ -8,7 +8,7 @@
   },
   "devDependencies": {
     "coveralls": "*",
-    "istanbul": "*",
+    "nyc": "*",
     "mocha": "*"
   },
   "homepage": "https://github.com/mediocre/petty-cache",
@@ -23,7 +23,7 @@
   "main": "index.js",
   "name": "petty-cache",
   "scripts": {
-    "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- --exit --reporter spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
+    "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
     "test": "mocha --exit --reporter spec"
   },
   "repository": {
