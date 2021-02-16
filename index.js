@@ -76,7 +76,7 @@ function PettyCache() {
 
     function getTtl(options) {
         // Default TTL is 30-60 seconds
-        var ttl = {
+        const ttl = {
             max: 60000,
             min: 30000
         };
@@ -102,7 +102,13 @@ function PettyCache() {
     /**
      * @param {Array} keys - An array of keys.
      */
-    this.bulkFetch = function(keys, func, callback) {
+    this.bulkFetch = function(keys, func, options, callback) {
+        // Options are optional
+        if (!callback) {
+            callback = options;
+            options = {};
+        }
+
         // If there aren't any keys, return
         if (!keys.length) {
             return callback(null, {});
@@ -161,7 +167,7 @@ function PettyCache() {
 
                 Object.keys(data).forEach(key => values[key] = data[key]);
 
-                _this.bulkSet(data, err => callback(err, values));
+                _this.bulkSet(data, options, err => callback(err, values));
             });
         });
     };
@@ -226,35 +232,17 @@ function PettyCache() {
             options = {};
         }
 
+        // Get TTL based on specified options
+        const ttl = getTtl(options);
+
         // Redis does not have a MSETEX command so we batch commands: http://redis.js.org/#api-clientbatchcommands
-        var batch = redisClient.batch();
+        const batch = redisClient.batch();
 
         Object.keys(values).forEach(key => {
-            var value = values[key];
+            const value = values[key];
 
             // Store value in memory cache with a short expiration
             memoryCache.put(key, value, random(2000, 5000));
-
-            // Default TTL is 30-60 seconds
-            var ttl = {
-                max: 60000,
-                min: 30000
-            };
-
-            if (Object.prototype.hasOwnProperty.call(options, 'ttl')) {
-                if (typeof options.ttl === 'number') {
-                    ttl.max = options.ttl;
-                    ttl.min = options.ttl;
-                } else {
-                    if (Object.prototype.hasOwnProperty.call(options.ttl, 'max')) {
-                        ttl.max = options.ttl.max;
-                    }
-
-                    if (Object.prototype.hasOwnProperty.call(options.ttl, 'min')) {
-                        ttl.min = options.ttl.min;
-                    }
-                }
-            }
 
             // Add Redis command
             batch.psetex(key, random(ttl.min, ttl.max), PettyCache.stringify(value));
@@ -383,15 +371,16 @@ function PettyCache() {
             options = {};
         }
 
+        // Get TTL based on specified options
+        const ttl = getTtl(options);
+
         // Default callback is a noop
         callback = callback || function() {};
-
-        options.ttl = getTtl(options);
 
         const _this = this;
 
         if (!intervals[key]) {
-            const delay = options.ttl.min / 2;
+            const delay = ttl.min / 2;
 
             intervals[key] = setInterval(function() {
                 // This distributed lock prevents multiple clients from executing func at the same time
@@ -817,14 +806,14 @@ function PettyCache() {
             options = {};
         }
 
+        // Get TTL based on specified options
+        const ttl = getTtl(options);
+
         // Default callback is a noop
         callback = callback || function() {};
 
         // Store value in memory cache with a short expiration
         memoryCache.put(key, value, random(2000, 5000));
-
-        // Get TTL based on specified options
-        const ttl = getTtl(options);
 
         // Store value is Redis
         redisClient.psetex(key, random(ttl.min, ttl.max), PettyCache.stringify(value), callback);

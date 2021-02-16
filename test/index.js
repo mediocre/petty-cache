@@ -301,6 +301,56 @@ describe('PettyCache.bulkFetch', function() {
             done();
         });
     });
+
+    it('PettyCache.bulkFetch should run func again after TTL', function(done) {
+        this.timeout(7000);
+
+        const keys = [Math.random().toString(), Math.random().toString()];
+        var numberOfFuncCalls = 0;
+
+        const func = function(keys, callback) {
+            numberOfFuncCalls++;
+
+            const results = {};
+            results[keys[0]] = numberOfFuncCalls;
+            results[keys[1]] = numberOfFuncCalls;
+
+            callback(null, results);
+        };
+
+        pettyCache.bulkFetch(keys, func, { ttl: 6000 }, function(err, results) {
+            assert.ifError(err);
+            assert.strictEqual(results[keys[0]], 1);
+            assert.strictEqual(results[keys[1]], 1);
+
+            pettyCache.bulkGet(keys, function(err, results) {
+                assert.ifError(err);
+                assert.strictEqual(results[keys[0]], 1);
+                assert.strictEqual(results[keys[1]], 1);
+            });
+
+            setTimeout(function() {
+                pettyCache.bulkGet(keys, function(err, results) {
+                    assert.ifError(err);
+                    assert.strictEqual(results[keys[0]], null);
+                    assert.strictEqual(results[keys[1]], null);
+
+                    pettyCache.bulkFetch(keys, func, { ttl: 6000 }, function(err, results) {
+                        assert.ifError(err);
+                        assert.strictEqual(results[keys[0]], 2);
+                        assert.strictEqual(results[keys[1]], 2);
+
+                        pettyCache.bulkGet(keys, function(err, results) {
+                            assert.ifError(err);
+                            assert.strictEqual(results[keys[0]], 2);
+                            assert.strictEqual(results[keys[1]], 2);
+                            done();
+                        });
+                    });
+                });
+            }, 6001);
+        });
+    });
 });
 
 describe('PettyCache.bulkGet', function() {
