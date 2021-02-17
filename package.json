@@ -8,8 +8,8 @@
   },
   "devDependencies": {
     "coveralls": "*",
-    "nyc": "*",
-    "mocha": "*"
+    "mocha": "*",
+    "nyc": "*"
   },
   "homepage": "https://github.com/mediocre/petty-cache",
   "keywords": [
