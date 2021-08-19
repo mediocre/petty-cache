@@ -75,7 +75,7 @@ pettyCache.bulkFetch(['a', 'b', 'c', 'd'], function(keys, callback) {
 
     keys.forEach(function(key) {
         results[key] = key.toUpperCase();
-    }
+    });
 
     callback(null, results);
 }, function(err, values) {
