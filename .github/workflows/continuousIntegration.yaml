@@ -8,11 +8,11 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.6.1]
+        node-version: [16.8.0]
         redis-version: [4.0.14]
 
     env:
-      DO_COVERALLS: 16.6.1/4.0.14
+      DO_COVERALLS: 16.8.0/4.0.14
 
     steps:
     - name: Setup Node ${{ matrix.node-version }}
