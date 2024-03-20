@@ -406,7 +406,7 @@ function PettyCache() {
 
     this.get = function(key, callback) {
         // Try to get value from memory cache
-        var result = getFromMemoryCache(key);
+        let result = getFromMemoryCache(key);
 
         // Return value from memory cache if it exists
         if (result.exists) {
