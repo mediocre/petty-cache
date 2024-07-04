@@ -339,7 +339,7 @@ function PettyCache() {
                                 if (util.types.isAsyncFunction(func)) {
                                     try {
                                         const data = await func();
-                                        
+
                                         _this.set(key, data, options, function(err) {
                                             callback(err, data);
                                         });
@@ -351,7 +351,7 @@ function PettyCache() {
                                         if (err) {
                                             return callback(err);
                                         }
-    
+
                                         _this.set(key, data, options, function(err) {
                                             callback(err, data);
                                         });
