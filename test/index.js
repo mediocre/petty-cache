@@ -939,6 +939,34 @@ describe('PettyCache.fetch', function() {
             done();
         });
     });
+
+    it('PettyCache.fetch should support async func', function(done) {
+        this.timeout(7000);
+
+        var key = Math.random().toString();
+
+        pettyCache.fetch(key, async () => {
+            return { foo: 'bar' };
+        }, function() {
+            pettyCache.fetch(key, async () => {
+                throw 'This function should not be called';
+            }, function(err, data) {
+                assert.ifError(err);
+                assert.equal(data.foo, 'bar');
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    pettyCache.fetch(key, async () => {
+                        throw 'This function should not be called';
+                    }, function(err, data) {
+                        assert.ifError(err);
+                        assert.strictEqual(data.foo, 'bar');
+                        done();
+                    });
+                }, 6000);
+            });
+        });
+    });
 });
 
 describe('PettyCache.fetchAndRefresh', function() {

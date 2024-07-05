@@ -1,3 +1,5 @@
+const util = require('util');
+
 const async = require('async');
 const lock = require('lock').Lock();
 const memoryCache = require('memory-cache');
@@ -322,7 +324,7 @@ function PettyCache() {
                             }
 
                             // Try to get value from Redis
-                            getFromRedis(key, function(err, result) {
+                            getFromRedis(key, async function(err, result) {
                                 if (err) {
                                     return callback(err);
                                 }
@@ -334,15 +336,27 @@ function PettyCache() {
                                 }
 
                                 // Execute the specified function and place the results in cache before returning the data
-                                func(function(err, data) {
-                                    if (err) {
-                                        return callback(err);
-                                    }
+                                if (util.types.isAsyncFunction(func)) {
+                                    try {
+                                        const data = await func();
 
-                                    _this.set(key, data, options, function(err) {
-                                        callback(err, data);
+                                        _this.set(key, data, options, function(err) {
+                                            callback(err, data);
+                                        });
+                                    } catch(err) {
+                                        callback(err);
+                                    }
+                                } else {
+                                    func(function(err, data) {
+                                        if (err) {
+                                            return callback(err);
+                                        }
+
+                                        _this.set(key, data, options, function(err) {
+                                            callback(err, data);
+                                        });
                                     });
-                                });
+                                }
                             });
                         })(releaseRedisLock(function(err, result) {
                             if (result.error) {

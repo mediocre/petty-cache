@@ -161,6 +161,16 @@ pettyCache.fetch('key', function(callback) {
 });
 ```
 
+```javascript
+pettyCache.fetch('key', async () => {
+    // This function is called on a cache miss
+    return await fs.readFile('file.txt');
+}, function(err, value) {
+    // This callback is called once petty-cache has loaded data from cache or executed the specified cache miss function
+    console.log(value);
+});
+```
+
 **Options**
 
 ```
