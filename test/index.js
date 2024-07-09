@@ -943,7 +943,7 @@ describe('PettyCache.fetch', function() {
     it('PettyCache.fetch should support async func', function(done) {
         this.timeout(7000);
 
-        var key = Math.random().toString();
+        const key = Math.random().toString();
 
         pettyCache.fetch(key, async () => {
             return { foo: 'bar' };
@@ -957,6 +957,62 @@ describe('PettyCache.fetch', function() {
                 // Wait for memory cache to expire
                 setTimeout(function() {
                     pettyCache.fetch(key, async () => {
+                        throw 'This function should not be called';
+                    }, function(err, data) {
+                        assert.ifError(err);
+                        assert.strictEqual(data.foo, 'bar');
+                        done();
+                    });
+                }, 6000);
+            });
+        });
+    });
+
+    it('PettyCache.fetch should support async func with callback', function(done) {
+        this.timeout(7000);
+
+        const key = Math.random().toString();
+
+        pettyCache.fetch(key, async (callback) => {
+            return callback(null, { foo: 'bar' });
+        }, function() {
+            pettyCache.fetch(key, async () => {
+                throw 'This function should not be called';
+            }, function(err, data) {
+                assert.ifError(err);
+                assert.equal(data.foo, 'bar');
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    pettyCache.fetch(key, async () => {
+                        throw 'This function should not be called';
+                    }, function(err, data) {
+                        assert.ifError(err);
+                        assert.strictEqual(data.foo, 'bar');
+                        done();
+                    });
+                }, 6000);
+            });
+        });
+    });
+
+    it('PettyCache.fetch should support sync func without callback', function(done) {
+        this.timeout(7000);
+
+        const key = Math.random().toString();
+
+        pettyCache.fetch(key, () => {
+            return { foo: 'bar' };
+        }, function() {
+            pettyCache.fetch(key, () => {
+                throw 'This function should not be called';
+            }, function(err, data) {
+                assert.ifError(err);
+                assert.equal(data.foo, 'bar');
+
+                // Wait for memory cache to expire
+                setTimeout(function() {
+                    pettyCache.fetch(key, () => {
                         throw 'This function should not be called';
                     }, function(err, data) {
                         assert.ifError(err);

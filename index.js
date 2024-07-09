@@ -1,5 +1,3 @@
-const util = require('util');
-
 const async = require('async');
 const lock = require('lock').Lock();
 const memoryCache = require('memory-cache');
@@ -336,7 +334,8 @@ function PettyCache() {
                                 }
 
                                 // Execute the specified function and place the results in cache before returning the data
-                                if (util.types.isAsyncFunction(func)) {
+                                if (func.length === 0) {
+                                    // If the function doesn't have any arguments, there wasn't a callback provided
                                     try {
                                         const data = await func();
 
@@ -347,6 +346,7 @@ function PettyCache() {
                                         callback(err);
                                     }
                                 } else {
+                                    // If the function has arguments, there was a callback provided
                                     func(function(err, data) {
                                         if (err) {
                                             return callback(err);
