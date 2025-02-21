@@ -1256,11 +1256,7 @@ describe('PettyCache.mutex', function() {
         it('PettyCache.mutex.lock should lock for 1 second by default (Promise)', async () => {
             const key = Math.random().toString();
 
-            try {
-                await pettyCache.mutex.lock(key);
-            } catch (err) {
-                assert.ifError(err);
-            }
+            await pettyCache.mutex.lock(key);
 
             try {
                console.log( await pettyCache.mutex.lock(key));
@@ -1270,11 +1266,7 @@ describe('PettyCache.mutex', function() {
 
             await new Promise(resolve => setTimeout(resolve, 1001));
 
-            try {
-                await pettyCache.mutex.lock(key);
-            } catch (err) {
-                assert.ifError(err);
-            }
+            await pettyCache.mutex.lock(key);
         });
 
         it('PettyCache.mutex.lock should lock for 2 seconds when ttl parameter is specified (Promise)', async function () {
@@ -1282,11 +1274,7 @@ describe('PettyCache.mutex', function() {
 
             const key = Math.random().toString();
 
-            try {
-                await pettyCache.mutex.lock(key, { ttl: 2000 });
-            } catch (err) {
-                assert.ifError(err);
-            }
+            await pettyCache.mutex.lock(key, { ttl: 2000 });
 
             try {
                 await pettyCache.mutex.lock(key);
@@ -1304,11 +1292,7 @@ describe('PettyCache.mutex', function() {
 
             await new Promise(resolve => setTimeout(resolve, 2001));
 
-            try {
-                await pettyCache.mutex.lock(key);
-            } catch (err) {
-                assert.ifError(err);
-            }
+            await pettyCache.mutex.lock(key);
         });
 
         it('PettyCache.mutex.lock should acquire a lock after retries (Promise)', async function() {
@@ -1316,11 +1300,7 @@ describe('PettyCache.mutex', function() {
 
             const key = Math.random().toString();
 
-            try {
-                await pettyCache.mutex.lock(key, { ttl: 2000 });
-            } catch(err) {
-                assert.ifError(err);
-            }
+            await pettyCache.mutex.lock(key, { ttl: 2000 });
 
             try {
                 await pettyCache.mutex.lock(key);
@@ -1328,11 +1308,7 @@ describe('PettyCache.mutex', function() {
                 assert(err);
             }
 
-            try {
-                await pettyCache.mutex.lock(key, { retry: { interval: 500, times: 10 } });
-            } catch(err) {
-                assert.ifError(err);
-            }
+            await pettyCache.mutex.lock(key, { retry: { interval: 500, times: 10 } });
         });
     });
 
