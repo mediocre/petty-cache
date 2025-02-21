@@ -1259,8 +1259,10 @@ describe('PettyCache.mutex', function() {
             await pettyCache.mutex.lock(key);
 
             try {
-               console.log( await pettyCache.mutex.lock(key));
+               await pettyCache.mutex.lock(key);
+               assert.fail('This lock is held');
             } catch (err) {
+                assert.notStrictEqual(err.message, 'This lock is held');
                 assert(err);
             }
 
@@ -1278,7 +1280,9 @@ describe('PettyCache.mutex', function() {
 
             try {
                 await pettyCache.mutex.lock(key);
+                assert.fail('This lock is held');
             } catch (err) {
+                assert.notStrictEqual(err.message, 'This lock is held');
                 assert(err);
             }
 
@@ -1286,7 +1290,9 @@ describe('PettyCache.mutex', function() {
 
             try {
                 await pettyCache.mutex.lock(key);
+                assert.fail('This lock is held');
             } catch (err) {
+                assert.notStrictEqual(err.message, 'This lock is held');
                 assert(err);
             }
 
@@ -1304,7 +1310,9 @@ describe('PettyCache.mutex', function() {
 
             try {
                 await pettyCache.mutex.lock(key);
+                assert.fail('This lock is held');
             } catch(err) {
+                assert.notStrictEqual(err.message, 'This lock is held');
                 assert(err);
             }
 
