@@ -468,7 +468,6 @@ function PettyCache() {
                 options = {};
             }
 
-            callback = callback || function() {};
             options = options || {};
 
             options.retry = Object.prototype.hasOwnProperty.call(options, 'retry') ? options.retry : {};
@@ -476,23 +475,50 @@ function PettyCache() {
             options.retry.times = Object.prototype.hasOwnProperty.call(options.retry, 'times') ? options.retry.times : 1;
             options.ttl = Object.prototype.hasOwnProperty.call(options, 'ttl') ? options.ttl : 1000;
 
-            async.retry({ interval: options.retry.interval, times: options.retry.times }, function(callback) {
-                redisClient.set(key, '1', 'NX', 'PX', options.ttl, function(err, res) {
-                    if (err) {
-                        return callback(err);
-                    }
+            if(typeof callback === 'function'){
+                async.retry({ interval: options.retry.interval, times: options.retry.times }, function(callback) {
+                    redisClient.set(key, '1', 'NX', 'PX', options.ttl, function(err, res) {
+                        if (err) {
+                            return callback(err);
+                        }
 
-                    if (!res) {
-                        return callback(new Error());
-                    }
+                        if (!res) {
+                            return callback(new Error());
+                        }
 
-                    if (res !== 'OK') {
-                        return callback(new Error(res));
-                    }
+                        if (res !== 'OK') {
+                            return callback(new Error(res));
+                        }
 
-                    callback();
+                        callback();
+                    });
+                }, callback);
+            } else {
+                return new Promise((resolve, reject) => {
+                    async.retry({ interval: options.retry.interval, times: options.retry.times }, function(callback) {
+                        redisClient.set(key, '1', 'NX', 'PX', options.ttl, function(err, res) {
+                            if (err) {
+                                return callback(err);
+                            }
+
+                            if (!res) {
+                                return callback(new Error());
+                            }
+
+                            if (res !== 'OK') {
+                                return callback(new Error(res));
+                            }
+
+                            callback();
+                        });
+                    }, (err) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        resolve();
+                    });
                 });
-            }, callback);
+            }
         },
         unlock: function(key, callback) {
             callback = callback || function() {};

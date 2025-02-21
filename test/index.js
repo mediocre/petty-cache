@@ -1189,7 +1189,9 @@ describe('PettyCache.mutex', function() {
         it('PettyCache.mutex.lock should lock for 1 second by default', function(done) {
             var key = Math.random().toString();
 
-            pettyCache.mutex.lock(key);
+            pettyCache.mutex.lock(key, (err) => {
+                assert.ifError(err);
+            });
 
             pettyCache.mutex.lock(key, (err) => {
                 assert(err);
@@ -1208,7 +1210,9 @@ describe('PettyCache.mutex', function() {
 
             var key = Math.random().toString();
 
-            pettyCache.mutex.lock(key, { ttl: 2000 });
+            pettyCache.mutex.lock(key, { ttl: 2000 }, (err) => {
+                assert.ifError(err);
+            });
 
             pettyCache.mutex.lock(key, (err) => {
                 assert(err);
@@ -1233,7 +1237,9 @@ describe('PettyCache.mutex', function() {
 
             var key = Math.random().toString();
 
-            pettyCache.mutex.lock(key, { ttl: 2000 });
+            pettyCache.mutex.lock(key, { ttl: 2000 } , (err) => {
+                assert.ifError(err);
+            });
 
             pettyCache.mutex.lock(key, (err) => {
                 assert(err);
@@ -1243,6 +1249,90 @@ describe('PettyCache.mutex', function() {
                 assert.ifError(err);
                 done();
             });
+        });
+    });
+
+    describe('PettyCache.mutex.lock (Promise based)', function() {
+        it('PettyCache.mutex.lock should lock for 1 second by default (Promise)', async () => {
+            const key = Math.random().toString();
+
+            try {
+                await pettyCache.mutex.lock(key);
+            } catch (err) {
+                assert.ifError(err);
+            }
+
+            try {
+               console.log( await pettyCache.mutex.lock(key));
+            } catch (err) {
+                assert(err);
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 1001));
+
+            try {
+                await pettyCache.mutex.lock(key);
+            } catch (err) {
+                assert.ifError(err);
+            }
+        });
+
+        it('PettyCache.mutex.lock should lock for 2 seconds when ttl parameter is specified (Promise)', async function () {
+            this.timeout(4000);
+
+            const key = Math.random().toString();
+
+            try {
+                await pettyCache.mutex.lock(key, { ttl: 2000 });
+            } catch (err) {
+                assert.ifError(err);
+            }
+
+            try {
+                await pettyCache.mutex.lock(key);
+            } catch (err) {
+                assert(err);
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 1001));
+
+            try {
+                await pettyCache.mutex.lock(key);
+            } catch (err) {
+                assert(err);
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 2001));
+
+            try {
+                await pettyCache.mutex.lock(key);
+            } catch (err) {
+                assert.ifError(err);
+            }
+        });
+
+        it('PettyCache.mutex.lock should acquire a lock after retries (Promise)', async function() {
+            this.timeout(3000);
+
+            const key = Math.random().toString();
+
+            try {
+                await pettyCache.mutex.lock(key, { ttl: 2000 });
+            } catch(err) {
+                assert.ifError(err);
+            }
+
+            try {
+                await pettyCache.mutex.lock(key);
+            } catch(err) {
+                assert(err);
+            }
+
+            try {
+                await pettyCache.mutex.lock(key, { retry: { interval: 500, times: 10 } });
+            } catch(err) {
+                assert.ifError(err);
+            }
         });
     });
 
