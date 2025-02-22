@@ -482,22 +482,22 @@ function PettyCache() {
                             if (err) {
                                 return callback(err);
                             }
-    
+
                             if (!res) {
                                 return callback(new Error());
                             }
-    
+
                             if (res !== 'OK') {
                                 return callback(new Error(res));
                             }
-    
+
                             callback();
                         });
                     }, function(err) {
                         if (err) {
                             return reject(err);
                         }
-    
+
                         resolve();
                     });
                 });

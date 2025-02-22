@@ -1095,7 +1095,7 @@ describe('PettyCache.fetchAndRefresh', function() {
             }, 100);
         };
 
-        pettyCache.fetchAndRefresh(key, func, { ttl: 6000 }, function(err, data) {;
+        pettyCache.fetchAndRefresh(key, func, { ttl: 6000 }, function(err, data) {
             assert.ifError(err);
             assert.equal(data, 1);
 
@@ -1228,7 +1228,7 @@ describe('PettyCache.mutex', function() {
                             assert(err);
                         });
                     }, 1001);
-        
+
                     setTimeout(() => {
                         pettyCache.mutex.lock(key, err => {
                             assert.ifError(err);
@@ -1354,7 +1354,7 @@ describe('PettyCache.mutex', function() {
             const key = Math.random().toString();
 
             await pettyCache.mutex.lock(key, { ttl: 10000 });
-            
+
             try {
                 await pettyCache.mutex.lock(key);
             } catch(err) {
