@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2025-02-21
+### Changed
+- Added the ability for `pettyCache.mutex` functions to support callbacks and promises.
+
 ## [3.3.0] - 2024-07-03
 ### Changed
 - Added the ability for `pettyCache.fetch` to support async functions.

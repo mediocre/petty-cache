@@ -461,42 +461,72 @@ function PettyCache() {
     };
 
     this.mutex = {
-        lock: function(key, options, callback) {
+        lock: (key, options, callback) => {
             // Options are optional
             if (!callback && typeof options === 'function') {
                 callback = options;
                 options = {};
             }
 
-            callback = callback || function() {};
             options = options || {};
 
-            options.retry = Object.prototype.hasOwnProperty.call(options, 'retry') ? options.retry : {};
-            options.retry.interval = Object.prototype.hasOwnProperty.call(options.retry, 'interval') ? options.retry.interval : 100;
-            options.retry.times = Object.prototype.hasOwnProperty.call(options.retry, 'times') ? options.retry.times : 1;
-            options.ttl = Object.prototype.hasOwnProperty.call(options, 'ttl') ? options.ttl : 1000;
+            options.retry = Object.hasOwn(options, 'retry') ? options.retry : {};
+            options.retry.interval = Object.hasOwn(options.retry, 'interval') ? options.retry.interval : 100;
+            options.retry.times = Object.hasOwn(options.retry, 'times') ? options.retry.times : 1;
+            options.ttl = Object.hasOwn(options, 'ttl') ? options.ttl : 1000;
 
-            async.retry({ interval: options.retry.interval, times: options.retry.times }, function(callback) {
-                redisClient.set(key, '1', 'NX', 'PX', options.ttl, function(err, res) {
-                    if (err) {
-                        return callback(err);
-                    }
+            const executor = () => {
+                return new Promise((resolve, reject) => {
+                    async.retry({ interval: options.retry.interval, times: options.retry.times }, callback => {
+                        redisClient.set(key, '1', 'NX', 'PX', options.ttl, function(err, res) {
+                            if (err) {
+                                return callback(err);
+                            }
 
-                    if (!res) {
-                        return callback(new Error());
-                    }
+                            if (!res) {
+                                return callback(new Error());
+                            }
 
-                    if (res !== 'OK') {
-                        return callback(new Error(res));
-                    }
+                            if (res !== 'OK') {
+                                return callback(new Error(res));
+                            }
 
-                    callback();
+                            callback();
+                        });
+                    }, function(err) {
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        resolve();
+                    });
                 });
-            }, callback);
+            };
+
+            if (callback) {
+                executor().then(result => callback(null, result)).catch(callback);
+            } else {
+                return executor();
+            }
         },
-        unlock: function(key, callback) {
-            callback = callback || function() {};
-            redisClient.del(key, callback);
+        unlock: (key, callback) => {
+            const executor = () => {
+                return new Promise((resolve, reject) => {
+                    redisClient.del(key, function(err) {
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        resolve();
+                    });
+                });
+            };
+
+            if (callback) {
+                executor().then(result => callback(null, result)).catch(callback);
+            } else {
+                return executor();
+            }
         }
     };
 
