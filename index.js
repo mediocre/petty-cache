@@ -476,30 +476,30 @@ function PettyCache() {
             options.ttl = Object.hasOwn(options, 'ttl') ? options.ttl : 1000;
 
             const executor = () => {
-                return new Promise(async (resolve, reject) => {
-                    try {
-                        await async.retry({ interval: options.retry.interval, times: options.retry.times }, callback => {
-                            redisClient.set(key, '1', 'NX', 'PX', options.ttl, function(err, res) {
-                                if (err) {
-                                    return callback(err);
-                                }
-        
-                                if (!res) {
-                                    return callback(new Error());
-                                }
-        
-                                if (res !== 'OK') {
-                                    return callback(new Error(res));
-                                }
-        
-                                callback();
-                            });
+                return new Promise((resolve, reject) => {
+                    async.retry({ interval: options.retry.interval, times: options.retry.times }, callback => {
+                        redisClient.set(key, '1', 'NX', 'PX', options.ttl, function(err, res) {
+                            if (err) {
+                                return callback(err);
+                            }
+    
+                            if (!res) {
+                                return callback(new Error());
+                            }
+    
+                            if (res !== 'OK') {
+                                return callback(new Error(res));
+                            }
+    
+                            callback();
                         });
-
+                    }, function(err) {
+                        if (err) {
+                            return reject(err);
+                        }
+    
                         resolve();
-                    } catch(err) {
-                        reject(err);
-                    }
+                    });
                 });
             };
 
