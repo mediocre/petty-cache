@@ -511,12 +511,17 @@ function PettyCache() {
         },
         unlock: (key, callback) => {
             const executor = () => {
-                return new Promise(async resolve => {
-                    await redisClient.del(key);
-                    resolve();
+                return new Promise((resolve, reject) => {
+                    redisClient.del(key, function(err) {
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        resolve();
+                    });
                 });
             };
-            
+
             if (callback) {
                 executor().then(result => callback(null, result)).catch(callback);
             } else {
