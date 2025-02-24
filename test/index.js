@@ -1266,7 +1266,9 @@ describe('PettyCache.mutex', function() {
 
             try {
                await pettyCache.mutex.lock(key);
+               assert.fail('Should have thrown an error');
             } catch(err) {
+                assert.notStrictEqual(err.message, 'Should have thrown an error');
                 assert(err);
             }
 
@@ -1284,7 +1286,9 @@ describe('PettyCache.mutex', function() {
 
             try {
                 await pettyCache.mutex.lock(key);
+                assert.fail('Should have thrown an error');
             } catch(err) {
+                assert.notStrictEqual(err.message, 'Should have thrown an error');
                 assert(err);
             }
 
@@ -1292,7 +1296,9 @@ describe('PettyCache.mutex', function() {
 
             try {
                 await pettyCache.mutex.lock(key);
+                assert.fail('Should have thrown an error');
             } catch(err) {
+                assert.notStrictEqual(err.message, 'Should have thrown an error');
                 assert(err);
             }
 
@@ -1309,7 +1315,9 @@ describe('PettyCache.mutex', function() {
 
             try {
                 await pettyCache.mutex.lock(key);
+                assert.fail('Should have thrown an error');
             } catch(err) {
+                assert.notStrictEqual(err.message, 'Should have thrown an error');
                 assert(err);
             }
 
@@ -1357,7 +1365,9 @@ describe('PettyCache.mutex', function() {
 
             try {
                 await pettyCache.mutex.lock(key);
+                assert.fail('Should have thrown an error');
             } catch(err) {
+                assert.notStrictEqual(err.message, 'Should have thrown an error');
                 assert(err);
             }
 
