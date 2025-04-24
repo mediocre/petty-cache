@@ -13,6 +13,7 @@ function PettyCache() {
         redisClient = redis.createClient(...arguments);
     }
 
+    //eslint-disable-next-line no-console
     redisClient.on('error', err => console.warn(`Warning: Redis reported a client error: ${err}`));
 
     function bulkGetFromRedis(keys, callback) {
