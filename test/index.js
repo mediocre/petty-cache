@@ -728,7 +728,7 @@ describe('PettyCache.bulkSet', function() {
 
 describe('PettyCache.del', function() {
     it('PettyCache.del', function(done) {
-        var key = Math.random().toString();
+        const key = Math.random().toString();
 
         pettyCache.set(key, key.split('').reverse().join(''), function(err) {
             assert.ifError(err);
@@ -748,6 +748,29 @@ describe('PettyCache.del', function() {
                             done();
                         });
                     });
+                });
+            });
+        });
+    });
+
+    it('PettyCache.del', function(done) {
+        const key = Math.random().toString();
+
+        pettyCache.set(key, key.split('').reverse().join(''), function(err) {
+            assert.ifError(err);
+
+            pettyCache.get(key, async function(err, value) {
+                assert.strictEqual(value, key.split('').reverse().join(''));
+
+                await pettyCache.del(key);
+
+                pettyCache.get(key, async function(err, value) {
+                    assert.ifError(err);
+                    assert.strictEqual(value, null);
+
+                    await pettyCache.del(key);
+
+                    done();
                 });
             });
         });

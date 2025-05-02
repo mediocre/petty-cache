@@ -255,14 +255,24 @@ function PettyCache() {
     };
 
     this.del = function(key, callback) {
-        redisClient.del(key, function(err) {
-            if (err) {
-                return callback(err);
-            }
+        const executor = () => {
+            return new Promise((resolve, reject) => {
+                redisClient.del(key, function(err) {
+                    if (err) {
+                        return reject(err);
+                    }
 
-            memoryCache.del(key);
-            callback();
-        });
+                    memoryCache.del(key);
+                    resolve();
+                });
+            });
+        };
+
+        if (callback) {
+            executor().then(result => callback(null, result)).catch(callback);
+        } else {
+            return executor();
+        }
     };
 
     // Returns data from cache if available;
