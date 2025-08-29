@@ -8,8 +8,9 @@
   },
   "devDependencies": {
     "@eslint/js": "*",
-    "globals": "*",
     "coveralls": "*",
+    "eslint": "*",
+    "globals": "*",
     "mocha": "*",
     "nyc": "*"
   },
@@ -28,9 +29,6 @@
     "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
     "test": "mocha --exit --reporter spec"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/mediocre/petty-cache.git"
-  },
+  "repository": "https://github.com/mediocre/petty-cache.git",
   "version": "3.5.0"
 }
