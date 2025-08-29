@@ -28,6 +28,9 @@ jobs:
     - name: Lint
       run: npx eslint .
 
+    - name: Install tools
+      run: npm install -g coveralls nyc
+
     - name: Setup Redis ${{ matrix.redis-version }}
       uses: supercharge/redis-github-action@1.1.0
       with:
