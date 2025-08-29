@@ -29,6 +29,6 @@
     "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
     "test": "mocha --exit --reporter spec"
   },
-  "repository": "https://github.com/mediocre/petty-cache.git",
+  "repository": "https://github.com/mediocre/petty-cache",
   "version": "3.5.0"
 }
