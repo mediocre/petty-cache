@@ -6,11 +6,11 @@ jobs:
   test:
     if: github.actor != 'dependabot[bot]'
     env:
-      RUN_COVERAGE_FOR: 22.17.0/6.0.14
+      RUN_COVERAGE_FOR: 24.11.0/6.0.14
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [22.17.0]
+        node-version: [24.11.0]
         redis-version: [6.0.14]
 
     steps:
