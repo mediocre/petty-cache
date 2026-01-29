@@ -1,6 +1,6 @@
 # petty-cache
 
-[![Build Status](https://github.com/mediocre/petty-cache/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/mediocre/petty-cache/actions?query=workflow%3Abuild+branch%3Amain)
+[![Build Status](https://github.com/stores-com/petty-cache/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/stores-com/petty-cache/actions?query=workflow%3Abuild+branch%3Amain)
 [![Coverage Status](https://coveralls.io/repos/github/mediocre/petty-cache/badge.svg?branch=main)](https://coveralls.io/github/mediocre/petty-cache?branch=main)
 
 A cache module for Node.js that uses a two-level cache (in-memory cache for recently accessed data plus Redis for distributed caching) with automatic serialization plus some extra features to avoid cache stampedes and thundering herds.

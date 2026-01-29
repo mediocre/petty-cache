@@ -11,7 +11,7 @@
         "globals": "*",
         "mocha": "*"
     },
-    "homepage": "https://github.com/mediocre/petty-cache",
+    "homepage": "https://github.com/stores-com/petty-cache",
     "keywords": [
         "cache",
         "lock",
@@ -22,7 +22,7 @@
     "license": "Apache-2.0",
     "main": "index.js",
     "name": "petty-cache",
-    "repository": "https://github.com/mediocre/petty-cache",
+    "repository": "https://github.com/stores-com/petty-cache",
     "scripts": {
         "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
         "test": "mocha --exit --reporter spec"
